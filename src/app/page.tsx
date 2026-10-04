@@ -44,6 +44,14 @@ interface Transaction {
   userId?: string;
 }
 
+interface Goal {
+  id: string;
+  name: string;
+  targetAmount: number;
+  currentAmount: number;
+  userId?: string;
+}
+
 const INCOME_SOURCES = ["Негізгі жұмыс", "Қосымша табыс", "Фриланс", "Сыйлық", "Бизнес", "Ата-ана", "Досым"];
 const INCOME_REASONS = ["Айлық", "Аванс", "Қарызды қайтарды", "Бонус", "Сатылым"];
 
@@ -82,6 +90,7 @@ export default function Home() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [goals, setGoals] = useState<Goal[]>([]);
   
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -128,7 +137,18 @@ export default function Home() {
       setTransactions(data);
     });
 
-    return () => unsubscribe();
+    const qGoals = query(
+      collection(db, "goals"),
+      where("userId", "==", user.uid)
+    );
+    const unsubGoals = onSnapshot(qGoals, (snapshot) => {
+      setGoals(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Goal)));
+    });
+
+    return () => {
+      unsubscribe();
+      unsubGoals();
+    };
   }, [user]);
 
   const handleSignIn = async () => {
@@ -569,11 +589,10 @@ export default function Home() {
 
                 <div>
                   <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
-                    Нақты не үшін?
+                    Нақты не үшін? (Міндетті емес)
                   </label>
                   <input 
                     type="text" 
-                    required
                     list="reasons-list"
                     value={reason}
                     onChange={(e) => setReason(e.target.value)}
@@ -636,12 +655,14 @@ export default function Home() {
                       </div>
                       <div>
                         <div className="flex items-center space-x-2">
-                          <p className="font-bold text-gray-900">{t.reason}</p>
+                          <p className="font-bold text-gray-900">{t.reason || t.sourceOrDestination}</p>
                           <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 bg-gray-100 text-gray-500 rounded-full">
                             {t.category}
                           </span>
                         </div>
-                        <p className="text-sm text-gray-500 mt-0.5">{t.sourceOrDestination}</p>
+                        {t.reason && t.sourceOrDestination && (
+                          <p className="text-sm text-gray-500 mt-0.5">{t.sourceOrDestination}</p>
+                        )}
                         <p className="text-xs text-blue-500 font-medium mt-1">
                           {format(parseISO(t.date), "dd MMMM yyyy, HH:mm")}
                         </p>
@@ -672,48 +693,83 @@ export default function Home() {
             )}
           </div>
 
-          <div className="bg-white p-6 rounded-3xl shadow-sm relative">
-            <h2 className="text-lg font-bold mb-6 text-gray-800 flex items-center">
-              <PieChartIcon className="w-5 h-5 mr-2 text-gray-400" />
-              Шығыстар аналитикасы
-            </h2>
-            {chartData.length > 0 ? (
-              <div className="h-64 relative">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={chartData}
-                      innerRadius={70}
-                      outerRadius={95}
-                      paddingAngle={4}
-                      cornerRadius={8}
-                      dataKey="value"
-                      stroke="none"
-                    >
-                      {chartData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip 
-                      formatter={(value: any) => `${formatMoney(value)} ₸`} 
-                      contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 8px 24px rgba(0,0,0,0.08)' }}
-                      itemStyle={{ fontWeight: 600 }}
-                    />
-                    <Legend iconType="circle" wrapperStyle={{ fontSize: '12px', marginTop: '10px' }} />
-                  </PieChart>
-                </ResponsiveContainer>
-                
-                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none pb-6">
-                  <p className="text-[10px] text-gray-400 uppercase tracking-widest font-semibold">Шығыс</p>
-                  <p className="text-lg font-bold text-gray-800">{formatMoney(totalExpense)} ₸</p>
+          <div className="space-y-6">
+            <div className="bg-white p-6 rounded-3xl shadow-sm relative">
+              <h2 className="text-lg font-bold mb-6 text-gray-800 flex items-center">
+                <PieChartIcon className="w-5 h-5 mr-2 text-gray-400" />
+                Шығыстар аналитикасы
+              </h2>
+              {chartData.length > 0 ? (
+                <div className="h-64 relative">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={chartData}
+                        innerRadius={70}
+                        outerRadius={95}
+                        paddingAngle={4}
+                        cornerRadius={8}
+                        dataKey="value"
+                        stroke="none"
+                      >
+                        {chartData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip 
+                        formatter={(value: any) => `${formatMoney(value)} ₸`} 
+                        contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 8px 24px rgba(0,0,0,0.08)' }}
+                        itemStyle={{ fontWeight: 600 }}
+                      />
+                      <Legend iconType="circle" wrapperStyle={{ fontSize: '12px', marginTop: '10px' }} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                  
+                  <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none pb-6">
+                    <p className="text-[10px] text-gray-400 uppercase tracking-widest font-semibold">Шығыс</p>
+                    <p className="text-lg font-bold text-gray-800">{formatMoney(totalExpense)} ₸</p>
+                  </div>
                 </div>
+              ) : (
+                <div className="h-64 flex flex-col items-center justify-center text-gray-400">
+                  <PieChartIcon className="w-12 h-12 mb-3 opacity-20" />
+                  <p className="text-sm font-medium">Шығыс жоқ</p>
+                </div>
+              )}
+            </div>
+
+            {/* Goals Widget */}
+            <div className="bg-white p-6 rounded-3xl shadow-sm">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-lg font-bold text-gray-800 flex items-center">
+                  Мақсаттар
+                </h2>
+                <button className="text-sm font-bold text-blue-500 hover:text-blue-600 transition" onClick={() => alert("Бұл функция келесі жаңартуда қосылады!")}>
+                  + Қосу
+                </button>
               </div>
-            ) : (
-              <div className="h-64 flex flex-col items-center justify-center text-gray-400">
-                <PieChartIcon className="w-12 h-12 mb-3 opacity-20" />
-                <p className="text-sm font-medium">Шығыс жоқ</p>
-              </div>
-            )}
+              
+              {goals.length === 0 ? (
+                <p className="text-sm text-gray-400">Әзірге мақсат жоқ. Ақша жинау үшін жаңа мақсат қосыңыз!</p>
+              ) : (
+                <div className="space-y-5">
+                  {goals.map(g => {
+                    const percent = Math.min((g.currentAmount / g.targetAmount) * 100, 100);
+                    return (
+                      <div key={g.id}>
+                        <div className="flex justify-between text-sm mb-2">
+                          <span className="font-bold text-gray-800">{g.name}</span>
+                          <span className="text-gray-500 font-medium">{formatMoney(g.currentAmount)} / {formatMoney(g.targetAmount)} ₸</span>
+                        </div>
+                        <div className="w-full bg-gray-100 rounded-full h-3 overflow-hidden">
+                          <div className="bg-black h-3 rounded-full transition-all duration-1000" style={{ width: `${percent}%` }}></div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
