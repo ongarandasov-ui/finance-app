@@ -61,6 +61,14 @@ interface Budget {
   userId?: string;
 }
 
+interface Subscription {
+  id: string;
+  name: string;
+  amount: number;
+  category: string;
+  userId?: string;
+}
+
 const INCOME_SOURCES = ["Негізгі жұмыс", "Қосымша табыс", "Фриланс", "Сыйлық", "Бизнес", "Ата-ана", "Досым"];
 const INCOME_REASONS = ["Айлық", "Аванс", "Қарызды қайтарды", "Бонус", "Сатылым"];
 
@@ -116,6 +124,13 @@ export default function Home() {
   const [isBudgetFormOpen, setIsBudgetFormOpen] = useState(false);
   const [budgetCategory, setBudgetCategory] = useState(Object.keys(EXPENSE_CATEGORIES)[0]);
   const [budgetLimit, setBudgetLimit] = useState("");
+
+  // Subscription States
+  const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
+  const [isSubFormOpen, setIsSubFormOpen] = useState(false);
+  const [subName, setSubName] = useState("");
+  const [subAmount, setSubAmount] = useState("");
+  const [subCategory, setSubCategory] = useState(Object.keys(EXPENSE_CATEGORIES)[0]);
   
   const [type, setType] = useState<TransactionType>("expense");
   const [amount, setAmount] = useState("");
@@ -183,10 +198,19 @@ export default function Home() {
       setBudgets(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Budget)));
     });
 
+    const qSubs = query(
+      collection(db, "subscriptions"),
+      where("userId", "==", user.uid)
+    );
+    const unsubSubs = onSnapshot(qSubs, (snapshot) => {
+      setSubscriptions(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Subscription)));
+    });
+
     return () => {
       unsubscribe();
       unsubGoals();
       unsubBudgets();
+      unsubSubs();
     };
   }, [user]);
 
@@ -215,6 +239,34 @@ export default function Home() {
     });
     setIsBudgetFormOpen(false);
     setBudgetLimit("");
+  };
+
+  const handleAddSubscription = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) return;
+    await addDoc(collection(db, "subscriptions"), {
+      name: subName,
+      amount: Number(subAmount.replace(/\D/g, "")),
+      category: subCategory,
+      userId: user.uid
+    });
+    setIsSubFormOpen(false);
+    setSubName("");
+    setSubAmount("");
+  };
+
+  const handlePaySubscription = async (sub: Subscription) => {
+    if (!user) return;
+    await addDoc(collection(db, "transactions"), {
+      type: "expense",
+      amount: sub.amount,
+      sourceOrDestination: sub.name,
+      reason: "Тұрақты төлем",
+      category: sub.category,
+      date: new Date().toISOString(),
+      userId: user.uid
+    });
+    alert(`${sub.name} сәтті төленді!`);
   };
 
   const handleSignIn = async () => {
@@ -883,6 +935,39 @@ export default function Home() {
                 </div>
               )}
             </div>
+
+            {/* Subscriptions Widget */}
+            <div className="bg-white dark:bg-[#1C1C1E] dark:border dark:border-gray-800 p-6 rounded-3xl shadow-sm">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-lg font-bold text-gray-800 dark:text-gray-200 flex items-center">
+                  Тұрақты төлемдер
+                </h2>
+                <button className="text-sm font-bold text-blue-500 hover:text-blue-600 transition" onClick={() => setIsSubFormOpen(true)}>
+                  + Қосу
+                </button>
+              </div>
+              
+              {subscriptions.length === 0 ? (
+                <p className="text-sm text-gray-400">Жазылымдар жоқ. Spotify, Netflix сияқты төлемдерді қосыңыз.</p>
+              ) : (
+                <div className="space-y-4">
+                  {subscriptions.map(s => (
+                    <div key={s.id} className="flex justify-between items-center p-3 bg-gray-50 dark:bg-black rounded-2xl">
+                      <div>
+                        <p className="font-bold text-gray-900 dark:text-white">{s.name}</p>
+                        <p className="text-xs text-gray-500">{formatMoney(s.amount)} ₸</p>
+                      </div>
+                      <button 
+                        onClick={() => handlePaySubscription(s)}
+                        className="bg-black dark:bg-white text-white dark:text-black px-4 py-2 rounded-xl text-xs font-bold hover:scale-105 transition-transform"
+                      >
+                        Төлеу
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -938,6 +1023,41 @@ export default function Home() {
               <div>
                 <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 block">Лимит сомасы (₸)</label>
                 <input required type="text" inputMode="numeric" value={budgetLimit} onChange={e => setBudgetLimit(formatMoney(e.target.value))} placeholder="50 000" className="w-full bg-gray-50 dark:bg-black border-0 p-4 rounded-2xl outline-none font-bold focus:ring-2 focus:ring-black" />
+              </div>
+              <button type="submit" className="w-full bg-black text-white dark:bg-white dark:text-black font-bold py-4 rounded-2xl mt-4 shadow-md hover:bg-gray-800 dark:hover:bg-gray-200 transition">Сақтау</button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Sub Modal */}
+      {isSubFormOpen && (
+        <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-[#1C1C1E] dark:border dark:border-gray-800 rounded-3xl p-6 w-full max-w-sm relative">
+            <button onClick={() => setIsSubFormOpen(false)} className="absolute top-4 right-4 p-2 text-gray-400 hover:text-black dark:text-white rounded-full hover:bg-gray-100 transition">
+              <X className="w-5 h-5" />
+            </button>
+            <h2 className="text-xl font-bold mb-6 text-gray-900 dark:text-white">Жаңа төлем</h2>
+            <form onSubmit={handleAddSubscription} className="space-y-4">
+              <div>
+                <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 block">Атауы</label>
+                <input required type="text" value={subName} onChange={e => setSubName(e.target.value)} placeholder="Мысалы: Netflix" className="w-full bg-gray-50 dark:bg-black border-0 p-4 rounded-2xl outline-none font-medium focus:ring-2 focus:ring-black" />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 block">Санат</label>
+                <select 
+                  value={subCategory}
+                  onChange={e => setSubCategory(e.target.value)}
+                  className="w-full bg-gray-50 dark:bg-black border-0 p-4 rounded-2xl outline-none font-medium focus:ring-2 focus:ring-black"
+                >
+                  {Object.keys(EXPENSE_CATEGORIES).map(c => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 block">Сомасы (₸)</label>
+                <input required type="text" inputMode="numeric" value={subAmount} onChange={e => setSubAmount(formatMoney(e.target.value))} placeholder="3000" className="w-full bg-gray-50 dark:bg-black border-0 p-4 rounded-2xl outline-none font-bold focus:ring-2 focus:ring-black" />
               </div>
               <button type="submit" className="w-full bg-black text-white dark:bg-white dark:text-black font-bold py-4 rounded-2xl mt-4 shadow-md hover:bg-gray-800 dark:hover:bg-gray-200 transition">Сақтау</button>
             </form>
