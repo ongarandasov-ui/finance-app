@@ -682,7 +682,7 @@ export default function Home() {
                       ))}
                     </Pie>
                     <Tooltip 
-                      formatter={(value: number) => `${formatMoney(value)} ₸`} 
+                      formatter={(value: any) => `${formatMoney(value)} ₸`} 
                       contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 8px 24px rgba(0,0,0,0.08)' }}
                       itemStyle={{ fontWeight: 600 }}
                     />
