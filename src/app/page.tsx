@@ -29,7 +29,8 @@ import {
 } from "recharts";
 import { auth, db, googleProvider } from "@/lib/firebase";
 import { signInWithPopup, signOut, onAuthStateChanged, User } from "firebase/auth";
-import { collection, query, where, onSnapshot, addDoc, deleteDoc, doc, updateDoc } from "firebase/firestore";
+import { collection, query, where, onSnapshot, addDoc, deleteDoc, doc, updateDoc, writeBatch } from "firebase/firestore";
+import { read, utils } from "xlsx";
 
 type TransactionType = "income" | "expense";
 type FilterPeriod = "all" | "today" | "yesterday" | "month" | "custom";
@@ -377,6 +378,73 @@ export default function Home() {
     alert(`${sub.name} сәтті төленді!`);
   };
 
+  
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+    
+    try {
+      const data = await file.arrayBuffer();
+      const workbook = read(data);
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      const rows: any[] = utils.sheet_to_json(sheet, { header: 1 });
+      
+      // Kaspi format is usually something like: Date, Category, Detail, Amount
+      // But it's very messy. Let's try to extract reasonably.
+      // We will loop from row 5 down to skip Kaspi headers
+      const batch = writeBatch(db);
+      let count = 0;
+      
+      for (let i = 2; i < rows.length; i++) {
+        const row = rows[i];
+        if (!row || row.length < 3) continue;
+        
+        let dateStr = row[0]; // "DD.MM.YY"
+        let amountStr = String(row[row.length - 1]); // Amount is usually last column
+        
+        // Try parsing amount
+        const amount = Number(amountStr.replace(/[^0-9.-]+/g,""));
+        if (isNaN(amount) || amount === 0) continue;
+        
+        // Try parsing date if possible, else use today
+        let d = new Date();
+        if (typeof dateStr === 'string' && dateStr.includes('.')) {
+          const parts = dateStr.split('.');
+          if (parts.length >= 3) {
+            const y = parts[2].length === 2 ? 2000 + parseInt(parts[2]) : parseInt(parts[2]);
+            d = new Date(y, parseInt(parts[1]) - 1, parseInt(parts[0]));
+          }
+        }
+        
+        const isExpense = amount < 0;
+        const absAmount = Math.abs(amount);
+        
+        const newDocRef = doc(collection(db, "transactions"));
+        batch.set(newDocRef, {
+          type: isExpense ? "expense" : "income",
+          amount: absAmount,
+          sourceOrDestination: String(row[2] || "Белгісіз"),
+          reason: "Excel Import",
+          category: String(row[1] || "Басқа"),
+          date: d.toISOString(),
+          userId: user.uid,
+          account: "Kaspi Gold"
+        });
+        count++;
+      }
+      
+      if (count > 0) {
+        await batch.commit();
+        alert(count + " транзакция сәтті жүктелді!");
+      } else {
+        alert("Ешқандай транзакция табылмады. Форматты тексеріңіз.");
+      }
+    } catch (err: any) {
+      console.error(err);
+      alert("Қателік: " + err.message);
+    }
+  };
+
   const handleSignIn = async () => {
     try {
       await signInWithPopup(auth, googleProvider);
@@ -553,7 +621,49 @@ export default function Home() {
     .filter((t) => t.type === "expense")
     .reduce((acc, curr) => acc + curr.amount, 0);
 
+  
   const balance = totalIncome - totalExpense;
+
+  // Smart Analytics
+  const now = new Date();
+  const currentMonth = now.getMonth();
+  const currentYear = now.getFullYear();
+  
+  const lastMonth = currentMonth === 0 ? 11 : currentMonth - 1;
+  const lastMonthYear = currentMonth === 0 ? currentYear - 1 : currentYear;
+
+  const thisMonthExpenses = transactions
+    .filter(t => t.type === 'expense')
+    .filter(t => {
+      const d = new Date(t.date);
+      return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+    })
+    .reduce((sum, t) => sum + t.amount, 0);
+
+  const lastMonthExpenses = transactions
+    .filter(t => t.type === 'expense')
+    .filter(t => {
+      const d = new Date(t.date);
+      return d.getMonth() === lastMonth && d.getFullYear() === lastMonthYear;
+    })
+    .reduce((sum, t) => sum + t.amount, 0);
+
+  let analyticsMessage = "";
+  let analyticsColor = "text-gray-500 bg-gray-50 dark:bg-gray-800 dark:text-gray-400";
+  if (lastMonthExpenses > 0) {
+    const diff = thisMonthExpenses - lastMonthExpenses;
+    const percent = Math.round(Math.abs(diff) / lastMonthExpenses * 100);
+    if (diff > 0) {
+      analyticsMessage = `Ақылды кеңес: Сіз бұл айда өткен айға қарағанда ${percent}% (${formatMoney(diff)} ₸) көп жұмсадыңыз. Үнемдеуге тырысыңыз!`;
+      analyticsColor = "text-red-600 bg-red-50 dark:bg-red-900/20 dark:text-red-400 border border-red-100 dark:border-red-900/50";
+    } else if (diff < 0) {
+      analyticsMessage = `Керемет! Сіз бұл айда өткен айға қарағанда ${percent}% (${formatMoney(Math.abs(diff))} ₸) аз жұмсадыңыз.`;
+      analyticsColor = "text-green-600 bg-green-50 dark:bg-green-900/20 dark:text-green-400 border border-green-100 dark:border-green-900/50";
+    } else {
+      analyticsMessage = `Сіздің шығындарыңыз өткен аймен бірдей.`;
+    }
+  }
+
 
   const accountBalances = ACCOUNTS.map(acc => {
     const accTransactions = transactions.filter(t => t.account === acc || (!t.account && acc === "Kaspi Gold"));
@@ -631,7 +741,13 @@ export default function Home() {
               <p className="text-xs text-gray-400 truncate max-w-[200px]">{user.email}</p>
             </div>
           </div>
+
           <div className="flex items-center gap-2">
+            <label className="bg-green-500 hover:bg-green-600 text-white p-3 rounded-full cursor-pointer transition-transform shadow-md" title="Excel жүктеу (Kaspi)">
+              <input type="file" accept=".xlsx, .xls" className="hidden" onChange={handleFileUpload} />
+              <Download className="w-5 h-5 rotate-180" />
+            </label>
+
             <button 
               onClick={() => setIsDarkMode(!isDarkMode)}
               className="bg-gray-100 dark:bg-[#2C2C2E] hover:bg-gray-200 dark:hover:bg-[#3C3C3E] text-gray-600 dark:text-gray-300 p-3 rounded-full transition-transform"
