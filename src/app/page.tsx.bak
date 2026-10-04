@@ -14,9 +14,7 @@ import {
   Calendar,
   Pencil,
   Download,
-  Filter,
-  Moon,
-  Sun
+  Filter
 } from "lucide-react";
 import { format, isToday, isYesterday, isSameMonth, isSameDay, parseISO } from "date-fns";
 import {
@@ -91,7 +89,6 @@ const formatMoney = (val: number | string) => {
 export default function Home() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isDarkMode, setIsDarkMode] = useState(false);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [goals, setGoals] = useState<Goal[]>([]);
   
@@ -124,14 +121,6 @@ export default function Home() {
     });
     return () => unsubscribe();
   }, []);
-
-  useEffect(() => {
-    if (isDarkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, [isDarkMode]);
 
   useEffect(() => {
     if (!user || !user.displayName) {
@@ -327,7 +316,7 @@ export default function Home() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-black flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
       </div>
     );
@@ -335,14 +324,14 @@ export default function Home() {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-black flex flex-col items-center justify-center p-4">
-        <div className="bg-white dark:bg-[#1C1C1E] dark:border dark:border-gray-800 p-8 rounded-3xl shadow-sm text-center max-w-sm w-full border border-gray-100">
-          <Wallet className="w-16 h-16 text-black dark:text-white mx-auto mb-6" />
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Қаржы</h1>
+      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
+        <div className="bg-white p-8 rounded-3xl shadow-sm text-center max-w-sm w-full border border-gray-100">
+          <Wallet className="w-16 h-16 text-black mx-auto mb-6" />
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Қаржы</h1>
           <p className="text-gray-500 mb-8">Жеке қаржыңызды бақылау үшін кіріңіз</p>
           <button 
             onClick={handleSignIn}
-            className="w-full bg-black text-white dark:bg-white dark:text-black font-bold py-4 rounded-2xl hover:bg-gray-800 dark:hover:bg-gray-200 transition shadow-md flex items-center justify-center gap-2"
+            className="w-full bg-black text-white font-bold py-4 rounded-2xl hover:bg-gray-800 transition shadow-md flex items-center justify-center gap-2"
           >
             Google арқылы кіру
           </button>
@@ -401,7 +390,7 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-black text-gray-900 dark:text-white p-4 md:p-8 pb-24 md:pb-8 font-sans selection:bg-blue-100">
+    <div className="min-h-screen bg-gray-50 text-gray-900 p-4 md:p-8 pb-24 md:pb-8 font-sans selection:bg-blue-100">
       
       <datalist id="places-list">
         {placeOptions.map((place, i) => <option key={i} value={place} />)}
@@ -412,7 +401,7 @@ export default function Home() {
 
       <div className="max-w-4xl mx-auto space-y-6">
         
-        <header className="flex justify-between items-center bg-white dark:bg-[#1C1C1E] dark:border dark:border-gray-800 p-4 rounded-3xl shadow-sm">
+        <header className="flex justify-between items-center bg-white p-4 rounded-3xl shadow-sm">
           <div className="flex items-center gap-3 px-2">
             {user.photoURL ? (
               <img src={user.photoURL} alt="Аватар" className="w-12 h-12 rounded-full border border-gray-100" />
@@ -424,7 +413,7 @@ export default function Home() {
               </div>
             )}
             <div>
-              <h1 className="text-lg font-bold tracking-tight text-gray-900 dark:text-white leading-tight">
+              <h1 className="text-lg font-bold tracking-tight text-gray-900 leading-tight">
                 {user.displayName || "Қолданушы"}
               </h1>
               <p className="text-xs text-gray-400 truncate max-w-[200px]">{user.email}</p>
@@ -432,21 +421,14 @@ export default function Home() {
           </div>
           <div className="flex items-center gap-2">
             <button 
-              onClick={() => setIsDarkMode(!isDarkMode)}
-              className="bg-gray-100 dark:bg-[#2C2C2E] hover:bg-gray-200 dark:hover:bg-[#3C3C3E] text-gray-600 dark:text-gray-300 p-3 rounded-full transition-transform"
-              title="Қараңғы режим"
-            >
-              {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-            </button>
-            <button 
               onClick={() => setIsFormOpen(!isFormOpen)}
-              className="bg-black hover:bg-gray-800 dark:hover:bg-gray-200 text-white p-3 rounded-full shadow-md transition-transform hover:scale-105"
+              className="bg-black hover:bg-gray-800 text-white p-3 rounded-full shadow-md transition-transform hover:scale-105"
             >
               {isFormOpen && !editingId ? <X className="w-6 h-6" /> : <Plus className="w-6 h-6" />}
             </button>
             <button 
               onClick={() => signOut(auth)}
-              className="bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 p-3 rounded-full transition-transform"
+              className="bg-gray-100 hover:bg-gray-200 text-gray-600 p-3 rounded-full transition-transform"
               title="Шығу"
             >
               <LogOut className="w-5 h-5" />
@@ -458,32 +440,32 @@ export default function Home() {
         <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 md:mx-0 md:px-0 md:overflow-visible scrollbar-hide snap-x">
           <button 
             onClick={() => setFilterPeriod("today")}
-            className={`flex-shrink-0 snap-center px-4 py-2 rounded-2xl text-sm font-medium transition ${filterPeriod === "today" ? "bg-black text-white dark:bg-white dark:text-black shadow-md" : "bg-white dark:bg-[#1C1C1E] dark:border dark:border-gray-800 text-gray-600 hover:bg-gray-100"}`}
+            className={`flex-shrink-0 snap-center px-4 py-2 rounded-2xl text-sm font-medium transition ${filterPeriod === "today" ? "bg-black text-white shadow-md" : "bg-white text-gray-600 hover:bg-gray-100"}`}
           >
             Бүгін
           </button>
           <button 
             onClick={() => setFilterPeriod("yesterday")}
-            className={`flex-shrink-0 snap-center px-4 py-2 rounded-2xl text-sm font-medium transition ${filterPeriod === "yesterday" ? "bg-black text-white dark:bg-white dark:text-black shadow-md" : "bg-white dark:bg-[#1C1C1E] dark:border dark:border-gray-800 text-gray-600 hover:bg-gray-100"}`}
+            className={`flex-shrink-0 snap-center px-4 py-2 rounded-2xl text-sm font-medium transition ${filterPeriod === "yesterday" ? "bg-black text-white shadow-md" : "bg-white text-gray-600 hover:bg-gray-100"}`}
           >
             Кеше
           </button>
           <button 
             onClick={() => setFilterPeriod("month")}
-            className={`flex-shrink-0 snap-center px-4 py-2 rounded-2xl text-sm font-medium transition ${filterPeriod === "month" ? "bg-black text-white dark:bg-white dark:text-black shadow-md" : "bg-white dark:bg-[#1C1C1E] dark:border dark:border-gray-800 text-gray-600 hover:bg-gray-100"}`}
+            className={`flex-shrink-0 snap-center px-4 py-2 rounded-2xl text-sm font-medium transition ${filterPeriod === "month" ? "bg-black text-white shadow-md" : "bg-white text-gray-600 hover:bg-gray-100"}`}
           >
             Осы ай
           </button>
           <button 
             onClick={() => setFilterPeriod("all")}
-            className={`flex-shrink-0 snap-center px-4 py-2 rounded-2xl text-sm font-medium transition ${filterPeriod === "all" ? "bg-black text-white dark:bg-white dark:text-black shadow-md" : "bg-white dark:bg-[#1C1C1E] dark:border dark:border-gray-800 text-gray-600 hover:bg-gray-100"}`}
+            className={`flex-shrink-0 snap-center px-4 py-2 rounded-2xl text-sm font-medium transition ${filterPeriod === "all" ? "bg-black text-white shadow-md" : "bg-white text-gray-600 hover:bg-gray-100"}`}
           >
             Барлық уақыт
           </button>
           
           <div className="relative flex-shrink-0 snap-center">
             <button 
-              className={`flex items-center justify-center w-10 h-10 rounded-2xl transition ${filterPeriod === "custom" ? "bg-black text-white dark:bg-white dark:text-black shadow-md" : "bg-white dark:bg-[#1C1C1E] dark:border dark:border-gray-800 text-gray-600 hover:bg-gray-100"}`}
+              className={`flex items-center justify-center w-10 h-10 rounded-2xl transition ${filterPeriod === "custom" ? "bg-black text-white shadow-md" : "bg-white text-gray-600 hover:bg-gray-100"}`}
               title="Күнтізбеден таңдау"
             >
               <Calendar className="w-4 h-4" />
@@ -512,10 +494,10 @@ export default function Home() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-white dark:bg-[#1C1C1E] dark:border dark:border-gray-800 p-6 rounded-3xl shadow-sm">
+          <div className="bg-white p-6 rounded-3xl shadow-sm">
             <div className="flex items-center space-x-4">
-              <div className="p-4 bg-gray-50 dark:bg-black rounded-2xl">
-                <Wallet className="w-6 h-6 text-gray-700 dark:text-gray-300" />
+              <div className="p-4 bg-gray-50 rounded-2xl">
+                <Wallet className="w-6 h-6 text-gray-700" />
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-400">
@@ -525,7 +507,7 @@ export default function Home() {
               </div>
             </div>
           </div>
-          <div className="bg-white dark:bg-[#1C1C1E] dark:border dark:border-gray-800 p-6 rounded-3xl shadow-sm">
+          <div className="bg-white p-6 rounded-3xl shadow-sm">
             <div className="flex items-center space-x-4">
               <div className="p-4 bg-green-50 rounded-2xl">
                 <ArrowUpCircle className="w-6 h-6 text-green-500" />
@@ -536,7 +518,7 @@ export default function Home() {
               </div>
             </div>
           </div>
-          <div className="bg-white dark:bg-[#1C1C1E] dark:border dark:border-gray-800 p-6 rounded-3xl shadow-sm">
+          <div className="bg-white p-6 rounded-3xl shadow-sm">
             <div className="flex items-center space-x-4">
               <div className="p-4 bg-red-50 rounded-2xl">
                 <ArrowDownCircle className="w-6 h-6 text-red-500" />
@@ -550,7 +532,7 @@ export default function Home() {
         </div>
 
         {isFormOpen && (
-          <div className="bg-white dark:bg-[#1C1C1E] dark:border dark:border-gray-800 p-6 rounded-3xl shadow-sm animate-in fade-in slide-in-from-top-4 border border-gray-100 relative">
+          <div className="bg-white p-6 rounded-3xl shadow-sm animate-in fade-in slide-in-from-top-4 border border-gray-100 relative">
             
             {editingId && (
               <button 
@@ -565,14 +547,14 @@ export default function Home() {
               <button
                 type="button"
                 onClick={() => { setType("income"); setCategory("Кіріс"); }}
-                className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-colors ${type === "income" ? "bg-white dark:bg-[#1C1C1E] dark:border dark:border-gray-800 text-green-600 shadow-sm" : "text-gray-500 hover:text-gray-700 dark:text-gray-300"}`}
+                className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-colors ${type === "income" ? "bg-white text-green-600 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
               >
                 Кіріс
               </button>
               <button
                 type="button"
                 onClick={() => { setType("expense"); setCategory(Object.keys(EXPENSE_CATEGORIES)[0]); }}
-                className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-colors ${type === "expense" ? "bg-white dark:bg-[#1C1C1E] dark:border dark:border-gray-800 text-red-600 shadow-sm" : "text-gray-500 hover:text-gray-700 dark:text-gray-300"}`}
+                className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-colors ${type === "expense" ? "bg-white text-red-600 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
               >
                 Шығыс
               </button>
@@ -588,7 +570,7 @@ export default function Home() {
                       setCategory(e.target.value);
                       setReason("");
                     }}
-                    className="w-full bg-gray-50 dark:bg-black border-0 p-4 rounded-2xl focus:ring-2 focus:ring-black outline-none font-medium text-gray-800 dark:text-gray-200"
+                    className="w-full bg-gray-50 border-0 p-4 rounded-2xl focus:ring-2 focus:ring-black outline-none font-medium text-gray-800"
                   >
                     {Object.keys(EXPENSE_CATEGORIES).map(c => (
                       <option key={c} value={c}>{c}</option>
@@ -606,7 +588,7 @@ export default function Home() {
                     required 
                     value={displayAmount}
                     onChange={handleAmountChange}
-                    className="w-full bg-gray-50 dark:bg-black border-0 p-4 rounded-2xl focus:ring-2 focus:ring-black outline-none text-xl font-bold"
+                    className="w-full bg-gray-50 border-0 p-4 rounded-2xl focus:ring-2 focus:ring-black outline-none text-xl font-bold"
                     placeholder="0"
                   />
                 </div>
@@ -621,7 +603,7 @@ export default function Home() {
                     list="places-list"
                     value={sourceOrDestination}
                     onChange={(e) => setSourceOrDestination(e.target.value)}
-                    className="w-full bg-gray-50 dark:bg-black border-0 p-4 rounded-2xl focus:ring-2 focus:ring-black outline-none font-medium"
+                    className="w-full bg-gray-50 border-0 p-4 rounded-2xl focus:ring-2 focus:ring-black outline-none font-medium"
                     placeholder={getPlacePlaceholder()}
                   />
                 </div>
@@ -635,7 +617,7 @@ export default function Home() {
                     list="reasons-list"
                     value={reason}
                     onChange={(e) => setReason(e.target.value)}
-                    className="w-full bg-gray-50 dark:bg-black border-0 p-4 rounded-2xl focus:ring-2 focus:ring-black outline-none font-medium"
+                    className="w-full bg-gray-50 border-0 p-4 rounded-2xl focus:ring-2 focus:ring-black outline-none font-medium"
                     placeholder={getReasonPlaceholder()}
                   />
                 </div>
@@ -643,7 +625,7 @@ export default function Home() {
 
               <button 
                 type="submit"
-                className="w-full bg-black text-white dark:bg-white dark:text-black font-bold py-4 rounded-2xl hover:bg-gray-800 dark:hover:bg-gray-200 transition shadow-md"
+                className="w-full bg-black text-white font-bold py-4 rounded-2xl hover:bg-gray-800 transition shadow-md"
               >
                 {editingId ? "Өзгерісті сақтау" : "Қосу"}
               </button>
@@ -652,27 +634,27 @@ export default function Home() {
         )}
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="md:col-span-2 bg-white dark:bg-[#1C1C1E] dark:border dark:border-gray-800 p-6 rounded-3xl shadow-sm">
+          <div className="md:col-span-2 bg-white p-6 rounded-3xl shadow-sm">
             
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-lg font-bold text-gray-800 dark:text-gray-200">Операциялар тарихы</h2>
+              <h2 className="text-lg font-bold text-gray-800">Операциялар тарихы</h2>
               
               <div className="flex bg-gray-100 p-1 rounded-xl">
                 <button 
                   onClick={() => setTypeFilter("all")}
-                  className={`px-3 py-1 text-xs font-semibold rounded-lg transition ${typeFilter === "all" ? "bg-white dark:bg-[#1C1C1E] dark:border dark:border-gray-800 shadow-sm text-black dark:text-white" : "text-gray-500"}`}
+                  className={`px-3 py-1 text-xs font-semibold rounded-lg transition ${typeFilter === "all" ? "bg-white shadow-sm text-black" : "text-gray-500"}`}
                 >
                   Бәрі
                 </button>
                 <button 
                   onClick={() => setTypeFilter("income")}
-                  className={`px-3 py-1 text-xs font-semibold rounded-lg transition ${typeFilter === "income" ? "bg-white dark:bg-[#1C1C1E] dark:border dark:border-gray-800 shadow-sm text-green-600" : "text-gray-500"}`}
+                  className={`px-3 py-1 text-xs font-semibold rounded-lg transition ${typeFilter === "income" ? "bg-white shadow-sm text-green-600" : "text-gray-500"}`}
                 >
                   Кіріс
                 </button>
                 <button 
                   onClick={() => setTypeFilter("expense")}
-                  className={`px-3 py-1 text-xs font-semibold rounded-lg transition ${typeFilter === "expense" ? "bg-white dark:bg-[#1C1C1E] dark:border dark:border-gray-800 shadow-sm text-red-600" : "text-gray-500"}`}
+                  className={`px-3 py-1 text-xs font-semibold rounded-lg transition ${typeFilter === "expense" ? "bg-white shadow-sm text-red-600" : "text-gray-500"}`}
                 >
                   Шығыс
                 </button>
@@ -687,14 +669,14 @@ export default function Home() {
             ) : (
               <div className="space-y-3">
                 {filteredTransactions.map(t => (
-                  <div key={t.id} className="group flex justify-between items-center p-4 rounded-2xl hover:bg-gray-50 dark:bg-black transition border border-transparent hover:border-gray-100">
+                  <div key={t.id} className="group flex justify-between items-center p-4 rounded-2xl hover:bg-gray-50 transition border border-transparent hover:border-gray-100">
                     <div className="flex items-center space-x-4">
                       <div className={`p-3 rounded-2xl ${t.type === 'income' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
                         {t.type === 'income' ? <ArrowUpCircle className="w-5 h-5" /> : <ArrowDownCircle className="w-5 h-5" />}
                       </div>
                       <div>
                         <div className="flex items-center space-x-2">
-                          <p className="font-bold text-gray-900 dark:text-white">{t.reason || t.sourceOrDestination}</p>
+                          <p className="font-bold text-gray-900">{t.reason || t.sourceOrDestination}</p>
                           <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 bg-gray-100 text-gray-500 rounded-full">
                             {t.category}
                           </span>
@@ -733,8 +715,8 @@ export default function Home() {
           </div>
 
           <div className="space-y-6">
-            <div className="bg-white dark:bg-[#1C1C1E] dark:border dark:border-gray-800 p-6 rounded-3xl shadow-sm relative">
-              <h2 className="text-lg font-bold mb-6 text-gray-800 dark:text-gray-200 flex items-center">
+            <div className="bg-white p-6 rounded-3xl shadow-sm relative">
+              <h2 className="text-lg font-bold mb-6 text-gray-800 flex items-center">
                 <PieChartIcon className="w-5 h-5 mr-2 text-gray-400" />
                 Шығыстар аналитикасы
               </h2>
@@ -766,7 +748,7 @@ export default function Home() {
                   
                   <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none pb-6">
                     <p className="text-[10px] text-gray-400 uppercase tracking-widest font-semibold">Шығыс</p>
-                    <p className="text-lg font-bold text-gray-800 dark:text-gray-200">{formatMoney(totalExpense)} ₸</p>
+                    <p className="text-lg font-bold text-gray-800">{formatMoney(totalExpense)} ₸</p>
                   </div>
                 </div>
               ) : (
@@ -778,9 +760,9 @@ export default function Home() {
             </div>
 
             {/* Goals Widget */}
-            <div className="bg-white dark:bg-[#1C1C1E] dark:border dark:border-gray-800 p-6 rounded-3xl shadow-sm">
+            <div className="bg-white p-6 rounded-3xl shadow-sm">
               <div className="flex justify-between items-center mb-6">
-                <h2 className="text-lg font-bold text-gray-800 dark:text-gray-200 flex items-center">
+                <h2 className="text-lg font-bold text-gray-800 flex items-center">
                   Мақсаттар
                 </h2>
                 <button className="text-sm font-bold text-blue-500 hover:text-blue-600 transition" onClick={() => setIsGoalFormOpen(true)}>
@@ -797,7 +779,7 @@ export default function Home() {
                     return (
                       <div key={g.id}>
                         <div className="flex justify-between text-sm mb-2">
-                          <span className="font-bold text-gray-800 dark:text-gray-200">{g.name}</span>
+                          <span className="font-bold text-gray-800">{g.name}</span>
                           <span className="text-gray-500 font-medium">{formatMoney(g.currentAmount)} / {formatMoney(g.targetAmount)} ₸</span>
                         </div>
                         <div className="w-full bg-gray-100 rounded-full h-3 overflow-hidden">
@@ -816,25 +798,25 @@ export default function Home() {
       {/* Goal Modal */}
       {isGoalFormOpen && (
         <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-[#1C1C1E] dark:border dark:border-gray-800 rounded-3xl p-6 w-full max-w-sm relative">
-            <button onClick={() => setIsGoalFormOpen(false)} className="absolute top-4 right-4 p-2 text-gray-400 hover:text-black dark:text-white rounded-full hover:bg-gray-100 transition">
+          <div className="bg-white rounded-3xl p-6 w-full max-w-sm relative">
+            <button onClick={() => setIsGoalFormOpen(false)} className="absolute top-4 right-4 p-2 text-gray-400 hover:text-black rounded-full hover:bg-gray-100 transition">
               <X className="w-5 h-5" />
             </button>
-            <h2 className="text-xl font-bold mb-6 text-gray-900 dark:text-white">Жаңа мақсат</h2>
+            <h2 className="text-xl font-bold mb-6 text-gray-900">Жаңа мақсат</h2>
             <form onSubmit={handleAddGoal} className="space-y-4">
               <div>
                 <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 block">Мақсат атауы</label>
-                <input required type="text" value={goalName} onChange={e => setGoalName(e.target.value)} placeholder="Мысалы: Көлік алу" className="w-full bg-gray-50 dark:bg-black border-0 p-4 rounded-2xl outline-none font-medium focus:ring-2 focus:ring-black" />
+                <input required type="text" value={goalName} onChange={e => setGoalName(e.target.value)} placeholder="Мысалы: Көлік алу" className="w-full bg-gray-50 border-0 p-4 rounded-2xl outline-none font-medium focus:ring-2 focus:ring-black" />
               </div>
               <div>
                 <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 block">Қанша жинау керек? (₸)</label>
-                <input required type="text" inputMode="numeric" value={goalTarget} onChange={e => setGoalTarget(formatMoney(e.target.value))} placeholder="0" className="w-full bg-gray-50 dark:bg-black border-0 p-4 rounded-2xl outline-none font-bold focus:ring-2 focus:ring-black" />
+                <input required type="text" inputMode="numeric" value={goalTarget} onChange={e => setGoalTarget(formatMoney(e.target.value))} placeholder="0" className="w-full bg-gray-50 border-0 p-4 rounded-2xl outline-none font-bold focus:ring-2 focus:ring-black" />
               </div>
               <div>
                 <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 block">Қазір қанша бар? (₸)</label>
-                <input type="text" inputMode="numeric" value={goalCurrent} onChange={e => setGoalCurrent(formatMoney(e.target.value))} placeholder="0" className="w-full bg-gray-50 dark:bg-black border-0 p-4 rounded-2xl outline-none font-bold focus:ring-2 focus:ring-black" />
+                <input type="text" inputMode="numeric" value={goalCurrent} onChange={e => setGoalCurrent(formatMoney(e.target.value))} placeholder="0" className="w-full bg-gray-50 border-0 p-4 rounded-2xl outline-none font-bold focus:ring-2 focus:ring-black" />
               </div>
-              <button type="submit" className="w-full bg-black text-white dark:bg-white dark:text-black font-bold py-4 rounded-2xl mt-4 shadow-md hover:bg-gray-800 dark:hover:bg-gray-200 transition">Сақтау</button>
+              <button type="submit" className="w-full bg-black text-white font-bold py-4 rounded-2xl mt-4 shadow-md hover:bg-gray-800 transition">Сақтау</button>
             </form>
           </div>
         </div>
@@ -847,7 +829,7 @@ export default function Home() {
             setIsFormOpen(true);
             window.scrollTo({ top: 0, behavior: 'smooth' });
           }}
-          className="md:hidden fixed bottom-6 right-6 bg-black text-white dark:bg-white dark:text-black p-4 rounded-full shadow-2xl z-50 transition-transform active:scale-95"
+          className="md:hidden fixed bottom-6 right-6 bg-black text-white p-4 rounded-full shadow-2xl z-50 transition-transform active:scale-95"
         >
           <Plus className="w-6 h-6" />
         </button>
