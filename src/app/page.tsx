@@ -44,6 +44,7 @@ interface Transaction {
   date: string;
   category: string;
   userId?: string;
+  account?: string;
 }
 
 interface Goal {
@@ -68,6 +69,17 @@ interface Subscription {
   category: string;
   userId?: string;
 }
+
+interface Debt {
+  id: string;
+  type: "i_owe" | "owes_me";
+  personName: string;
+  amount: number;
+  isPaid: boolean;
+  userId?: string;
+}
+
+const ACCOUNTS = ["Kaspi Gold", "Қолма-қол", "Halyk Bank", "Депозит", "Басқа"];
 
 const INCOME_SOURCES = ["Негізгі жұмыс", "Қосымша табыс", "Фриланс", "Сыйлық", "Бизнес", "Ата-ана", "Досым"];
 const INCOME_REASONS = ["Айлық", "Аванс", "Қарызды қайтарды", "Бонус", "Сатылым"];
@@ -135,6 +147,15 @@ export default function Home() {
   const [subAmount, setSubAmount] = useState("");
   const [subCategory, setSubCategory] = useState(Object.keys(EXPENSE_CATEGORIES)[0]);
   
+  // Debt States
+  const [debts, setDebts] = useState<Debt[]>([]);
+  const [isDebtFormOpen, setIsDebtFormOpen] = useState(false);
+  const [debtType, setDebtType] = useState<"i_owe" | "owes_me">("owes_me");
+  const [debtPerson, setDebtPerson] = useState("");
+  const [debtAmount, setDebtAmount] = useState("");
+
+  const [selectedAccount, setSelectedAccount] = useState(ACCOUNTS[0]);
+
   const [type, setType] = useState<TransactionType>("expense");
   const [amount, setAmount] = useState("");
   const [displayAmount, setDisplayAmount] = useState(""); 
@@ -209,11 +230,20 @@ export default function Home() {
       setSubscriptions(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Subscription)));
     });
 
+    const qDebts = query(
+      collection(db, "debts"),
+      where("userId", "==", user.uid)
+    );
+    const unsubDebts = onSnapshot(qDebts, (snapshot) => {
+      setDebts(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Debt)));
+    });
+
     return () => {
       unsubscribe();
       unsubGoals();
       unsubBudgets();
       unsubSubs();
+      unsubDebts();
     };
   }, [user]);
 
@@ -289,6 +319,47 @@ export default function Home() {
     } catch (err: any) {
       alert("Қателік (Subscriptions): " + err.message);
       console.error(err);
+    }
+  };
+
+  
+  const handleAddDebt = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) return;
+    try {
+      await addDoc(collection(db, "debts"), {
+        type: debtType,
+        personName: debtPerson,
+        amount: Number(debtAmount.replace(/\D/g, "")),
+        isPaid: false,
+        userId: user.uid
+      });
+      setIsDebtFormOpen(false);
+      setDebtPerson("");
+      setDebtAmount("");
+    } catch (err: any) {
+      alert("Қателік (Debts): " + err.message);
+      console.error(err);
+    }
+  };
+
+  const handlePayDebt = async (debt: Debt) => {
+    if (!user) return;
+    try {
+      await updateDoc(doc(db, "debts", debt.id), { isPaid: true });
+      await addDoc(collection(db, "transactions"), {
+        type: debt.type === "i_owe" ? "expense" : "income",
+        amount: debt.amount,
+        sourceOrDestination: debt.personName,
+        reason: debt.type === "i_owe" ? "Қарызды қайтардым" : "Қарызын қайтарды",
+        category: "Басқа",
+        date: new Date().toISOString(),
+        userId: user.uid,
+        account: ACCOUNTS[0]
+      });
+      alert(debt.personName + " бойынша қарыз жабылды!");
+    } catch (err: any) {
+      alert("Қателік (Debt Pay): " + err.message);
     }
   };
 
@@ -484,6 +555,13 @@ export default function Home() {
 
   const balance = totalIncome - totalExpense;
 
+  const accountBalances = ACCOUNTS.map(acc => {
+    const accTransactions = transactions.filter(t => t.account === acc || (!t.account && acc === "Kaspi Gold"));
+    const inc = accTransactions.filter(t => t.type === "income").reduce((sum, t) => sum + t.amount, 0);
+    const exp = accTransactions.filter(t => t.type === "expense").reduce((sum, t) => sum + t.amount, 0);
+    return { account: acc, balance: inc - exp };
+  }).filter(a => a.balance !== 0);
+
   const expensesByCategory = filteredTransactions
     .filter(t => t.type === 'expense')
     .reduce((acc, curr) => {
@@ -644,7 +722,18 @@ export default function Home() {
                 <p className="text-sm font-medium text-gray-400">
                   {filterPeriod === "month" ? "Айдағы баланс" : filterPeriod === "all" ? "Жалпы баланс" : "Күндік баланс"}
                 </p>
+                
                 <p className="text-2xl font-bold tracking-tight">{formatMoney(balance)} ₸</p>
+                {accountBalances.length > 0 && (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {accountBalances.map(a => (
+                      <div key={a.account} className="bg-white/20 px-3 py-1 rounded-full text-xs font-medium backdrop-blur-sm shadow-sm border border-white/10">
+                        {a.account}: {formatMoney(a.balance)} ₸
+                      </div>
+                    ))}
+                  </div>
+                )}
+
               </div>
             </div>
           </div>
@@ -1011,6 +1100,45 @@ export default function Home() {
                 </div>
               )}
             </div>
+
+            {/* Debts Widget */}
+            <div className="bg-white dark:bg-[#1C1C1E] dark:border dark:border-gray-800 p-6 rounded-3xl shadow-sm">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-lg font-bold text-gray-800 dark:text-gray-200 flex items-center">
+                  Қарыз дәптері
+                </h2>
+                <button className="text-sm font-bold text-blue-500 hover:text-blue-600 transition" onClick={() => setIsDebtFormOpen(true)}>
+                  + Қосу
+                </button>
+              </div>
+              
+              {debts.filter(d => !d.isPaid).length === 0 ? (
+                <p className="text-sm text-gray-400">Қазір сізде ешқандай қарыз жазбасы жоқ.</p>
+              ) : (
+                <div className="space-y-4">
+                  {debts.filter(d => !d.isPaid).map(d => (
+                    <div key={d.id} className="flex justify-between items-center p-3 bg-gray-50 dark:bg-black rounded-2xl">
+                      <div>
+                        <p className="font-bold text-gray-900 dark:text-white">{d.personName}</p>
+                        <p className={`text-xs font-bold ${d.type === 'i_owe' ? 'text-red-500' : 'text-green-500'}`}>
+                          {d.type === 'i_owe' ? 'Мен қарызбын' : 'Маған қарыз'}
+                        </p>
+                      </div>
+                      <div className="flex flex-col items-end">
+                        <p className="font-bold mb-1">{formatMoney(d.amount)} ₸</p>
+                        <button 
+                          onClick={() => handlePayDebt(d)}
+                          className="text-xs font-bold bg-black dark:bg-white text-white dark:text-black px-3 py-1.5 rounded-lg hover:scale-105 transition"
+                        >
+                          Қайтарылды
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
           </div>
         </div>
       </div>
@@ -1122,6 +1250,34 @@ export default function Home() {
                 <input required type="text" inputMode="numeric" value={fundAmount} onChange={e => setFundAmount(formatMoney(e.target.value.replace(/\D/g, "")))} placeholder="5000" className="w-full bg-gray-50 dark:bg-black border-0 p-4 rounded-2xl outline-none font-bold focus:ring-2 focus:ring-black" />
               </div>
               <button type="submit" className="w-full bg-black text-white dark:bg-white dark:text-black font-bold py-4 rounded-2xl mt-4 shadow-md hover:bg-gray-800 dark:hover:bg-gray-200 transition">Қосу</button>
+            </form>
+          </div>
+        </div>
+      )}
+
+
+      {/* Debt Modal */}
+      {isDebtFormOpen && (
+        <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-[#1C1C1E] dark:border dark:border-gray-800 rounded-3xl p-6 w-full max-w-sm relative">
+            <button onClick={() => setIsDebtFormOpen(false)} className="absolute top-4 right-4 p-2 text-gray-400 hover:text-black dark:text-white rounded-full hover:bg-gray-100 transition">
+              <X className="w-5 h-5" />
+            </button>
+            <h2 className="text-xl font-bold mb-6 text-gray-900 dark:text-white">Жаңа қарыз</h2>
+            <form onSubmit={handleAddDebt} className="space-y-4">
+              <div>
+                <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 block">Кімге / Кімнен?</label>
+                <input required type="text" value={debtPerson} onChange={e => setDebtPerson(e.target.value)} placeholder="Адамның аты" className="w-full bg-gray-50 dark:bg-black border-0 p-4 rounded-2xl outline-none font-medium focus:ring-2 focus:ring-black" />
+              </div>
+              <div className="flex gap-2">
+                <button type="button" onClick={() => setDebtType("owes_me")} className={`flex-1 py-3 rounded-2xl font-bold text-sm transition ${debtType === "owes_me" ? "bg-green-500 text-white" : "bg-gray-100 text-gray-400"}`}>Маған қарыз</button>
+                <button type="button" onClick={() => setDebtType("i_owe")} className={`flex-1 py-3 rounded-2xl font-bold text-sm transition ${debtType === "i_owe" ? "bg-red-500 text-white" : "bg-gray-100 text-gray-400"}`}>Мен қарызбын</button>
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 block">Сомасы (₸)</label>
+                <input required type="text" inputMode="numeric" value={debtAmount} onChange={e => setDebtAmount(formatMoney(e.target.value.replace(/\D/g, "")))} placeholder="10 000" className="w-full bg-gray-50 dark:bg-black border-0 p-4 rounded-2xl outline-none font-bold focus:ring-2 focus:ring-black" />
+              </div>
+              <button type="submit" className="w-full bg-black text-white dark:bg-white dark:text-black font-bold py-4 rounded-2xl mt-4 shadow-md hover:bg-gray-800 dark:hover:bg-gray-200 transition">Сақтау</button>
             </form>
           </div>
         </div>
