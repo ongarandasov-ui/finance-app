@@ -987,11 +987,11 @@ export default function Home() {
               </div>
               <div>
                 <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 block">Қанша жинау керек? (₸)</label>
-                <input required type="text" inputMode="numeric" value={goalTarget} onChange={e => setGoalTarget(formatMoney(e.target.value))} placeholder="0" className="w-full bg-gray-50 dark:bg-black border-0 p-4 rounded-2xl outline-none font-bold focus:ring-2 focus:ring-black" />
+                <input required type="text" inputMode="numeric" value={goalTarget} onChange={e => setGoalTarget(formatMoney(e.target.value.replace(/\D/g, "")))} placeholder="0" className="w-full bg-gray-50 dark:bg-black border-0 p-4 rounded-2xl outline-none font-bold focus:ring-2 focus:ring-black" />
               </div>
               <div>
                 <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 block">Қазір қанша бар? (₸)</label>
-                <input type="text" inputMode="numeric" value={goalCurrent} onChange={e => setGoalCurrent(formatMoney(e.target.value))} placeholder="0" className="w-full bg-gray-50 dark:bg-black border-0 p-4 rounded-2xl outline-none font-bold focus:ring-2 focus:ring-black" />
+                <input type="text" inputMode="numeric" value={goalCurrent} onChange={e => setGoalCurrent(formatMoney(e.target.value.replace(/\D/g, "")))} placeholder="0" className="w-full bg-gray-50 dark:bg-black border-0 p-4 rounded-2xl outline-none font-bold focus:ring-2 focus:ring-black" />
               </div>
               <button type="submit" className="w-full bg-black text-white dark:bg-white dark:text-black font-bold py-4 rounded-2xl mt-4 shadow-md hover:bg-gray-800 dark:hover:bg-gray-200 transition">Сақтау</button>
             </form>
@@ -1022,7 +1022,7 @@ export default function Home() {
               </div>
               <div>
                 <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 block">Лимит сомасы (₸)</label>
-                <input required type="text" inputMode="numeric" value={budgetLimit} onChange={e => setBudgetLimit(formatMoney(e.target.value))} placeholder="50 000" className="w-full bg-gray-50 dark:bg-black border-0 p-4 rounded-2xl outline-none font-bold focus:ring-2 focus:ring-black" />
+                <input required type="text" inputMode="numeric" value={budgetLimit} onChange={e => setBudgetLimit(formatMoney(e.target.value.replace(/\D/g, "")))} placeholder="50 000" className="w-full bg-gray-50 dark:bg-black border-0 p-4 rounded-2xl outline-none font-bold focus:ring-2 focus:ring-black" />
               </div>
               <button type="submit" className="w-full bg-black text-white dark:bg-white dark:text-black font-bold py-4 rounded-2xl mt-4 shadow-md hover:bg-gray-800 dark:hover:bg-gray-200 transition">Сақтау</button>
             </form>
@@ -1057,7 +1057,7 @@ export default function Home() {
               </div>
               <div>
                 <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 block">Сомасы (₸)</label>
-                <input required type="text" inputMode="numeric" value={subAmount} onChange={e => setSubAmount(formatMoney(e.target.value))} placeholder="3000" className="w-full bg-gray-50 dark:bg-black border-0 p-4 rounded-2xl outline-none font-bold focus:ring-2 focus:ring-black" />
+                <input required type="text" inputMode="numeric" value={subAmount} onChange={e => setSubAmount(formatMoney(e.target.value.replace(/\D/g, "")))} placeholder="3000" className="w-full bg-gray-50 dark:bg-black border-0 p-4 rounded-2xl outline-none font-bold focus:ring-2 focus:ring-black" />
               </div>
               <button type="submit" className="w-full bg-black text-white dark:bg-white dark:text-black font-bold py-4 rounded-2xl mt-4 shadow-md hover:bg-gray-800 dark:hover:bg-gray-200 transition">Сақтау</button>
             </form>
