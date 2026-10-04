@@ -384,6 +384,10 @@ export default function Home() {
     if (!file || !user) return;
     
     try {
+      if (file.name.toLowerCase().endsWith('.pdf')) {
+        alert("PDF файлдарын оқу әзірге қиындық тудырады. Kaspi қосымшасынан 'Excel' форматында жүктеп алуыңызды сұраймыз.");
+        return;
+      }
       const data = await file.arrayBuffer();
       const workbook = read(data);
       const sheet = workbook.Sheets[workbook.SheetNames[0]];
@@ -744,7 +748,7 @@ export default function Home() {
 
           <div className="flex items-center gap-2">
             <label className="bg-green-500 hover:bg-green-600 text-white p-3 rounded-full cursor-pointer transition-transform shadow-md" title="Excel жүктеу (Kaspi)">
-              <input type="file" accept=".xlsx, .xls" className="hidden" onChange={handleFileUpload} />
+              <input type="file" accept=".xlsx, .xls, .pdf" className="hidden" onChange={handleFileUpload} />
               <Download className="w-5 h-5 rotate-180" />
             </label>
 
@@ -840,15 +844,7 @@ export default function Home() {
                 </p>
                 
                 <p className="text-2xl font-bold tracking-tight">{formatMoney(balance)} ₸</p>
-                {accountBalances.length > 0 && (
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {accountBalances.map(a => (
-                      <div key={a.account} className="bg-white/20 px-3 py-1 rounded-full text-xs font-medium backdrop-blur-sm shadow-sm border border-white/10">
-                        {a.account}: {formatMoney(a.balance)} ₸
-                      </div>
-                    ))}
-                  </div>
-                )}
+
 
               </div>
             </div>
@@ -924,19 +920,6 @@ export default function Home() {
                   </select>
                 </div>
               )}
-
-              <div>
-                <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Шот</label>
-                <select 
-                  value={selectedAccount}
-                  onChange={(e) => setSelectedAccount(e.target.value)}
-                  className="w-full bg-gray-50 dark:bg-black border-0 p-4 rounded-2xl outline-none font-medium text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-black mb-5"
-                >
-                  {ACCOUNTS.map(acc => (
-                    <option key={acc} value={acc}>{acc}</option>
-                  ))}
-                </select>
-              </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                 <div>
@@ -1039,11 +1022,7 @@ export default function Home() {
                           <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 bg-gray-100 dark:bg-gray-800 text-gray-500 rounded-full">
                             {t.category}
                           </span>
-                          {t.account && (
-                            <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 bg-blue-50 dark:bg-blue-900/30 text-blue-500 rounded-full">
-                              {t.account}
-                            </span>
-                          )}
+
                         </div>
                         {t.reason && t.sourceOrDestination && (
                           <p className="text-sm text-gray-500 mt-0.5">{t.sourceOrDestination}</p>
