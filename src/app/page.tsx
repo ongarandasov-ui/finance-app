@@ -149,16 +149,18 @@ export default function Home() {
   const handleSignIn = async () => {
     try {
       await signInWithPopup(auth, googleProvider);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Auth error:", error);
+      alert("Google арқылы кіру қателігі: " + error.message);
     }
   };
 
   const handleAppleSignIn = async () => {
     try {
       await signInWithPopup(auth, appleProvider);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Apple Auth error:", error);
+      alert("Apple арқылы кіру қателігі: " + error.message);
     }
   };
 
