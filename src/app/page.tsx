@@ -123,14 +123,6 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    if (!window.recaptchaVerifier && typeof window !== 'undefined') {
-      window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-        size: 'invisible'
-      });
-    }
-  }, []);
-
-  useEffect(() => {
     if (!user || !user.displayName) {
       setTransactions([]);
       return;
@@ -173,6 +165,17 @@ export default function Home() {
   const handlePhoneSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsAuthLoading(true);
+    
+    if (!window.recaptchaVerifier && typeof window !== 'undefined') {
+      try {
+        window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+          size: 'invisible'
+        });
+      } catch (e) {
+        console.error("Recaptcha init error", e);
+      }
+    }
+
     try {
       const formattedPhone = phoneNumber.startsWith("+") ? phoneNumber : `+7${phoneNumber.replace(/\D/g, "")}`;
       const result = await signInWithPhoneNumber(auth, formattedPhone, window.recaptchaVerifier);
