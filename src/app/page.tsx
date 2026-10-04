@@ -361,9 +361,22 @@ export default function Home() {
       <div className="max-w-4xl mx-auto space-y-6">
         
         <header className="flex justify-between items-center bg-white p-4 rounded-3xl shadow-sm">
-          <div className="px-4">
-            <h1 className="text-2xl font-bold tracking-tight text-gray-900">Қаржы</h1>
-            <p className="text-sm text-gray-400 truncate max-w-[200px]">{user.email}</p>
+          <div className="flex items-center gap-3 px-2">
+            {user.photoURL ? (
+              <img src={user.photoURL} alt="Аватар" className="w-12 h-12 rounded-full border border-gray-100" />
+            ) : (
+              <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center">
+                <span className="text-lg font-bold text-gray-500">
+                  {user.email?.charAt(0).toUpperCase()}
+                </span>
+              </div>
+            )}
+            <div>
+              <h1 className="text-lg font-bold tracking-tight text-gray-900 leading-tight">
+                {user.displayName || "Қолданушы"}
+              </h1>
+              <p className="text-xs text-gray-400 truncate max-w-[200px]">{user.email}</p>
+            </div>
           </div>
           <div className="flex items-center gap-2">
             <button 
