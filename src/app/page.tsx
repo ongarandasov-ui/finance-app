@@ -54,6 +54,13 @@ interface Goal {
   userId?: string;
 }
 
+interface Budget {
+  id: string;
+  category: string;
+  limitAmount: number;
+  userId?: string;
+}
+
 const INCOME_SOURCES = ["Негізгі жұмыс", "Қосымша табыс", "Фриланс", "Сыйлық", "Бизнес", "Ата-ана", "Досым"];
 const INCOME_REASONS = ["Айлық", "Аванс", "Қарызды қайтарды", "Бонус", "Сатылым"];
 
@@ -103,6 +110,12 @@ export default function Home() {
   const [goalName, setGoalName] = useState("");
   const [goalTarget, setGoalTarget] = useState("");
   const [goalCurrent, setGoalCurrent] = useState("");
+
+  // Budget States
+  const [budgets, setBudgets] = useState<Budget[]>([]);
+  const [isBudgetFormOpen, setIsBudgetFormOpen] = useState(false);
+  const [budgetCategory, setBudgetCategory] = useState(Object.keys(EXPENSE_CATEGORIES)[0]);
+  const [budgetLimit, setBudgetLimit] = useState("");
   
   const [type, setType] = useState<TransactionType>("expense");
   const [amount, setAmount] = useState("");
@@ -162,9 +175,18 @@ export default function Home() {
       setGoals(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Goal)));
     });
 
+    const qBudgets = query(
+      collection(db, "budgets"),
+      where("userId", "==", user.uid)
+    );
+    const unsubBudgets = onSnapshot(qBudgets, (snapshot) => {
+      setBudgets(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Budget)));
+    });
+
     return () => {
       unsubscribe();
       unsubGoals();
+      unsubBudgets();
     };
   }, [user]);
 
@@ -181,6 +203,18 @@ export default function Home() {
     setGoalName("");
     setGoalTarget("");
     setGoalCurrent("");
+  };
+
+  const handleAddBudget = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) return;
+    await addDoc(collection(db, "budgets"), {
+      category: budgetCategory,
+      limitAmount: Number(budgetLimit.replace(/\D/g, "")),
+      userId: user.uid
+    });
+    setIsBudgetFormOpen(false);
+    setBudgetLimit("");
   };
 
   const handleSignIn = async () => {
@@ -777,6 +811,46 @@ export default function Home() {
               )}
             </div>
 
+            {/* Budget Widget */}
+            <div className="bg-white dark:bg-[#1C1C1E] dark:border dark:border-gray-800 p-6 rounded-3xl shadow-sm">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-lg font-bold text-gray-800 dark:text-gray-200 flex items-center">
+                  Бюджет лимиттері
+                </h2>
+                <button className="text-sm font-bold text-blue-500 hover:text-blue-600 transition" onClick={() => setIsBudgetFormOpen(true)}>
+                  + Қосу
+                </button>
+              </div>
+              
+              {budgets.length === 0 ? (
+                <p className="text-sm text-gray-400">Сізде бюджеттік шектеу жоқ. Көп шығын кететін санаттарға лимит қойыңыз!</p>
+              ) : (
+                <div className="space-y-5">
+                  {budgets.map(b => {
+                    // Calculate current spending for this category this month
+                    const currentSpent = transactions
+                      .filter(t => t.type === 'expense' && t.category === b.category && isSameMonth(parseISO(t.date), new Date()))
+                      .reduce((sum, t) => sum + t.amount, 0);
+                    const percent = Math.min((currentSpent / b.limitAmount) * 100, 100);
+                    const isOver = currentSpent >= b.limitAmount;
+                    return (
+                      <div key={b.id}>
+                        <div className="flex justify-between text-sm mb-2">
+                          <span className="font-bold text-gray-800 dark:text-gray-200">{b.category}</span>
+                          <span className={`font-medium ${isOver ? 'text-red-500' : 'text-gray-500 dark:text-gray-400'}`}>
+                            {formatMoney(currentSpent)} / {formatMoney(b.limitAmount)} ₸
+                          </span>
+                        </div>
+                        <div className="w-full bg-gray-100 dark:bg-gray-800 rounded-full h-3 overflow-hidden">
+                          <div className={`h-3 rounded-full transition-all duration-1000 ${isOver ? 'bg-red-500' : 'bg-black dark:bg-white'}`} style={{ width: `${percent}%` }}></div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
             {/* Goals Widget */}
             <div className="bg-white dark:bg-[#1C1C1E] dark:border dark:border-gray-800 p-6 rounded-3xl shadow-sm">
               <div className="flex justify-between items-center mb-6">
@@ -833,6 +907,37 @@ export default function Home() {
               <div>
                 <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 block">Қазір қанша бар? (₸)</label>
                 <input type="text" inputMode="numeric" value={goalCurrent} onChange={e => setGoalCurrent(formatMoney(e.target.value))} placeholder="0" className="w-full bg-gray-50 dark:bg-black border-0 p-4 rounded-2xl outline-none font-bold focus:ring-2 focus:ring-black" />
+              </div>
+              <button type="submit" className="w-full bg-black text-white dark:bg-white dark:text-black font-bold py-4 rounded-2xl mt-4 shadow-md hover:bg-gray-800 dark:hover:bg-gray-200 transition">Сақтау</button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Budget Modal */}
+      {isBudgetFormOpen && (
+        <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-[#1C1C1E] dark:border dark:border-gray-800 rounded-3xl p-6 w-full max-w-sm relative">
+            <button onClick={() => setIsBudgetFormOpen(false)} className="absolute top-4 right-4 p-2 text-gray-400 hover:text-black dark:text-white rounded-full hover:bg-gray-100 transition">
+              <X className="w-5 h-5" />
+            </button>
+            <h2 className="text-xl font-bold mb-6 text-gray-900 dark:text-white">Жаңа лимит</h2>
+            <form onSubmit={handleAddBudget} className="space-y-4">
+              <div>
+                <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 block">Санатты таңдаңыз</label>
+                <select 
+                  value={budgetCategory}
+                  onChange={e => setBudgetCategory(e.target.value)}
+                  className="w-full bg-gray-50 dark:bg-black border-0 p-4 rounded-2xl outline-none font-medium focus:ring-2 focus:ring-black"
+                >
+                  {Object.keys(EXPENSE_CATEGORIES).map(c => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 block">Лимит сомасы (₸)</label>
+                <input required type="text" inputMode="numeric" value={budgetLimit} onChange={e => setBudgetLimit(formatMoney(e.target.value))} placeholder="50 000" className="w-full bg-gray-50 dark:bg-black border-0 p-4 rounded-2xl outline-none font-bold focus:ring-2 focus:ring-black" />
               </div>
               <button type="submit" className="w-full bg-black text-white dark:bg-white dark:text-black font-bold py-4 rounded-2xl mt-4 shadow-md hover:bg-gray-800 dark:hover:bg-gray-200 transition">Сақтау</button>
             </form>
