@@ -118,6 +118,9 @@ export default function Home() {
   const [goalName, setGoalName] = useState("");
   const [goalTarget, setGoalTarget] = useState("");
   const [goalCurrent, setGoalCurrent] = useState("");
+  
+  const [fundGoal, setFundGoal] = useState<Goal | null>(null);
+  const [fundAmount, setFundAmount] = useState("");
 
   // Budget States
   const [budgets, setBudgets] = useState<Budget[]>([]);
@@ -230,6 +233,25 @@ export default function Home() {
       setGoalCurrent("");
     } catch (err: any) {
       alert("Қателік (Goals): " + err.message);
+      console.error(err);
+    }
+  };
+
+  const handleFundGoal = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!fundGoal) return;
+    const added = Number(fundAmount.replace(/\D/g, ""));
+    if (added <= 0) return;
+    
+    try {
+      const newAmount = fundGoal.currentAmount + added;
+      await updateDoc(doc(db, "goals", fundGoal.id), {
+        currentAmount: newAmount
+      });
+      setFundGoal(null);
+      setFundAmount("");
+    } catch (err: any) {
+      alert("Қателік: " + err.message);
       console.error(err);
     }
   };
@@ -944,6 +966,12 @@ export default function Home() {
                         <div className="w-full bg-gray-100 rounded-full h-3 overflow-hidden">
                           <div className="bg-black h-3 rounded-full transition-all duration-1000" style={{ width: `${percent}%` }}></div>
                         </div>
+                        <button 
+                          onClick={() => setFundGoal(g)} 
+                          className="text-xs text-blue-500 font-bold mt-2 inline-flex items-center hover:text-blue-600 transition"
+                        >
+                          + Ақша қосу
+                        </button>
                       </div>
                     );
                   })}
@@ -1075,6 +1103,25 @@ export default function Home() {
                 <input required type="text" inputMode="numeric" value={subAmount} onChange={e => setSubAmount(formatMoney(e.target.value.replace(/\D/g, "")))} placeholder="3000" className="w-full bg-gray-50 dark:bg-black border-0 p-4 rounded-2xl outline-none font-bold focus:ring-2 focus:ring-black" />
               </div>
               <button type="submit" className="w-full bg-black text-white dark:bg-white dark:text-black font-bold py-4 rounded-2xl mt-4 shadow-md hover:bg-gray-800 dark:hover:bg-gray-200 transition">Сақтау</button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Fund Goal Modal */}
+      {fundGoal && (
+        <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-[#1C1C1E] dark:border dark:border-gray-800 rounded-3xl p-6 w-full max-w-sm relative">
+            <button onClick={() => { setFundGoal(null); setFundAmount(""); }} className="absolute top-4 right-4 p-2 text-gray-400 hover:text-black dark:text-white rounded-full hover:bg-gray-100 transition">
+              <X className="w-5 h-5" />
+            </button>
+            <h2 className="text-xl font-bold mb-6 text-gray-900 dark:text-white">Ақша қосу: {fundGoal.name}</h2>
+            <form onSubmit={handleFundGoal} className="space-y-4">
+              <div>
+                <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 block">Қанша ақша қосасыз? (₸)</label>
+                <input required type="text" inputMode="numeric" value={fundAmount} onChange={e => setFundAmount(formatMoney(e.target.value.replace(/\D/g, "")))} placeholder="5000" className="w-full bg-gray-50 dark:bg-black border-0 p-4 rounded-2xl outline-none font-bold focus:ring-2 focus:ring-black" />
+              </div>
+              <button type="submit" className="w-full bg-black text-white dark:bg-white dark:text-black font-bold py-4 rounded-2xl mt-4 shadow-md hover:bg-gray-800 dark:hover:bg-gray-200 transition">Қосу</button>
             </form>
           </div>
         </div>
