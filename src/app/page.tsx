@@ -25,16 +25,9 @@ import {
   Tooltip,
   Legend
 } from "recharts";
-import { auth, db, googleProvider, appleProvider } from "@/lib/firebase";
-import { signInWithPopup, signOut, onAuthStateChanged, User, RecaptchaVerifier, signInWithPhoneNumber, ConfirmationResult, updateProfile } from "firebase/auth";
+import { auth, db, googleProvider } from "@/lib/firebase";
+import { signInWithPopup, signOut, onAuthStateChanged, User } from "firebase/auth";
 import { collection, query, where, onSnapshot, addDoc, deleteDoc, doc, updateDoc } from "firebase/firestore";
-
-// Add global declaration for recaptchaVerifier
-declare global {
-  interface Window {
-    recaptchaVerifier: any;
-  }
-}
 
 type TransactionType = "income" | "expense";
 type FilterPeriod = "all" | "today" | "yesterday" | "month" | "custom";
@@ -90,14 +83,6 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   
-  // Auth States
-  const [authMethod, setAuthMethod] = useState<"options" | "phone" | "code" | "name">("options");
-  const [phoneNumber, setPhoneNumber] = useState("+7");
-  const [verificationCode, setVerificationCode] = useState("");
-  const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
-  const [fullName, setFullName] = useState("");
-  const [isAuthLoading, setIsAuthLoading] = useState(false);
-
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   
@@ -153,67 +138,6 @@ export default function Home() {
       console.error("Auth error:", error);
       alert("Google арқылы кіру қателігі: " + error.message);
     }
-  };
-
-  const handleAppleSignIn = async () => {
-    try {
-      await signInWithPopup(auth, appleProvider);
-    } catch (error: any) {
-      console.error("Apple Auth error:", error);
-      alert("Apple арқылы кіру қателігі: " + error.message);
-    }
-  };
-
-  const handlePhoneSignIn = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsAuthLoading(true);
-    
-    if (!window.recaptchaVerifier && typeof window !== 'undefined') {
-      try {
-        window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-          size: 'invisible'
-        });
-      } catch (e) {
-        console.error("Recaptcha init error", e);
-      }
-    }
-
-    try {
-      const formattedPhone = phoneNumber.startsWith("+") ? phoneNumber : `+7${phoneNumber.replace(/\D/g, "")}`;
-      const result = await signInWithPhoneNumber(auth, formattedPhone, window.recaptchaVerifier);
-      setConfirmationResult(result);
-      setAuthMethod("code");
-    } catch (error: any) {
-      console.error("SMS error", error);
-      alert("Қателік: " + error.message);
-    }
-    setIsAuthLoading(false);
-  };
-
-  const handleVerifyCode = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!confirmationResult) return;
-    setIsAuthLoading(true);
-    try {
-      const result = await confirmationResult.confirm(verificationCode);
-      if (!result.user.displayName) {
-         setAuthMethod("name");
-      }
-    } catch (error) {
-      console.error("Code verification error", error);
-      alert("Код қате немесе мерзімі біткен!");
-    }
-    setIsAuthLoading(false);
-  };
-
-  const handleSaveName = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsAuthLoading(true);
-    if (user && fullName) {
-      await updateProfile(user, { displayName: fullName });
-      setUser({ ...user, displayName: fullName } as User); // Trigger re-render
-    }
-    setIsAuthLoading(false);
   };
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -357,102 +281,19 @@ export default function Home() {
     );
   }
 
-  if (!user || !user.displayName) {
+  if (!user) {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
-        <div id="recaptcha-container"></div>
-        <div className="bg-white p-8 rounded-3xl shadow-sm max-w-sm w-full border border-gray-100">
-          <div className="text-center mb-8">
-            <Wallet className="w-16 h-16 text-black mx-auto mb-6" />
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">Қаржы</h1>
-            <p className="text-gray-500">Жеке қаржыңызды бақылауға кіріңіз</p>
-          </div>
-
-          {user && !user.displayName ? (
-            <form onSubmit={handleSaveName} className="space-y-4">
-              <h3 className="text-lg font-bold text-center mb-2">Аты-жөніңізді енгізіңіз</h3>
-              <input 
-                type="text" 
-                required
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                placeholder="Мысалы: Оңғар"
-                className="w-full bg-gray-50 border-0 p-4 rounded-2xl focus:ring-2 focus:ring-black outline-none font-medium"
-              />
-              <button 
-                type="submit"
-                disabled={isAuthLoading}
-                className="w-full bg-black text-white font-bold py-4 rounded-2xl hover:bg-gray-800 transition shadow-md disabled:opacity-50"
-              >
-                {isAuthLoading ? "Сақталуда..." : "Бастау"}
-              </button>
-            </form>
-          ) : authMethod === "options" ? (
-            <div className="space-y-3">
-              <button 
-                onClick={handleSignIn}
-                className="w-full bg-white text-gray-800 font-bold py-4 rounded-2xl hover:bg-gray-50 transition border border-gray-200 flex items-center justify-center gap-2"
-              >
-                Google арқылы кіру
-              </button>
-              <button 
-                onClick={handleAppleSignIn}
-                className="w-full bg-black text-white font-bold py-4 rounded-2xl hover:bg-gray-800 transition shadow-md flex items-center justify-center gap-2"
-              >
-                Apple арқылы кіру
-              </button>
-              <button 
-                onClick={() => setAuthMethod("phone")}
-                className="w-full bg-blue-50 text-blue-600 font-bold py-4 rounded-2xl hover:bg-blue-100 transition shadow-sm flex items-center justify-center gap-2"
-              >
-                Телефон нөмірімен кіру
-              </button>
-            </div>
-          ) : authMethod === "phone" ? (
-            <form onSubmit={handlePhoneSignIn} className="space-y-4">
-              <input 
-                type="tel" 
-                required
-                value={phoneNumber}
-                onChange={(e) => setPhoneNumber(e.target.value)}
-                placeholder="+7 (___) ___-__-__"
-                className="w-full bg-gray-50 border-0 p-4 rounded-2xl focus:ring-2 focus:ring-black outline-none font-bold text-lg"
-              />
-              <button 
-                type="submit"
-                disabled={isAuthLoading}
-                className="w-full bg-black text-white font-bold py-4 rounded-2xl hover:bg-gray-800 transition shadow-md disabled:opacity-50"
-              >
-                {isAuthLoading ? "Күте тұрыңыз..." : "Код жіберу"}
-              </button>
-              <button 
-                type="button"
-                onClick={() => setAuthMethod("options")}
-                className="w-full text-gray-400 font-medium py-2 hover:text-gray-600 transition"
-              >
-                Артқа қайту
-              </button>
-            </form>
-          ) : (
-            <form onSubmit={handleVerifyCode} className="space-y-4">
-              <p className="text-sm text-gray-500 text-center mb-2">SMS арқылы келген кодты енгізіңіз</p>
-              <input 
-                type="text" 
-                required
-                value={verificationCode}
-                onChange={(e) => setVerificationCode(e.target.value)}
-                placeholder="000000"
-                className="w-full bg-gray-50 border-0 p-4 rounded-2xl focus:ring-2 focus:ring-black outline-none font-bold text-center text-xl tracking-widest"
-              />
-              <button 
-                type="submit"
-                disabled={isAuthLoading}
-                className="w-full bg-black text-white font-bold py-4 rounded-2xl hover:bg-gray-800 transition shadow-md disabled:opacity-50"
-              >
-                {isAuthLoading ? "Тексерілуде..." : "Растау"}
-              </button>
-            </form>
-          )}
+        <div className="bg-white p-8 rounded-3xl shadow-sm text-center max-w-sm w-full border border-gray-100">
+          <Wallet className="w-16 h-16 text-black mx-auto mb-6" />
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Қаржы</h1>
+          <p className="text-gray-500 mb-8">Жеке қаржыңызды бақылау үшін кіріңіз</p>
+          <button 
+            onClick={handleSignIn}
+            className="w-full bg-black text-white font-bold py-4 rounded-2xl hover:bg-gray-800 transition shadow-md flex items-center justify-center gap-2"
+          >
+            Google арқылы кіру
+          </button>
         </div>
       </div>
     );
