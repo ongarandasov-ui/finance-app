@@ -94,6 +94,12 @@ export default function Home() {
   
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+
+  // Goal States
+  const [isGoalFormOpen, setIsGoalFormOpen] = useState(false);
+  const [goalName, setGoalName] = useState("");
+  const [goalTarget, setGoalTarget] = useState("");
+  const [goalCurrent, setGoalCurrent] = useState("");
   
   const [type, setType] = useState<TransactionType>("expense");
   const [amount, setAmount] = useState("");
@@ -150,6 +156,21 @@ export default function Home() {
       unsubGoals();
     };
   }, [user]);
+
+  const handleAddGoal = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) return;
+    await addDoc(collection(db, "goals"), {
+      name: goalName,
+      targetAmount: Number(goalTarget.replace(/\D/g, "")),
+      currentAmount: Number(goalCurrent.replace(/\D/g, "") || 0),
+      userId: user.uid
+    });
+    setIsGoalFormOpen(false);
+    setGoalName("");
+    setGoalTarget("");
+    setGoalCurrent("");
+  };
 
   const handleSignIn = async () => {
     try {
@@ -744,7 +765,7 @@ export default function Home() {
                 <h2 className="text-lg font-bold text-gray-800 flex items-center">
                   Мақсаттар
                 </h2>
-                <button className="text-sm font-bold text-blue-500 hover:text-blue-600 transition" onClick={() => alert("Бұл функция келесі жаңартуда қосылады!")}>
+                <button className="text-sm font-bold text-blue-500 hover:text-blue-600 transition" onClick={() => setIsGoalFormOpen(true)}>
                   + Қосу
                 </button>
               </div>
@@ -773,6 +794,33 @@ export default function Home() {
           </div>
         </div>
       </div>
+
+      {/* Goal Modal */}
+      {isGoalFormOpen && (
+        <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-6 w-full max-w-sm relative">
+            <button onClick={() => setIsGoalFormOpen(false)} className="absolute top-4 right-4 p-2 text-gray-400 hover:text-black rounded-full hover:bg-gray-100 transition">
+              <X className="w-5 h-5" />
+            </button>
+            <h2 className="text-xl font-bold mb-6 text-gray-900">Жаңа мақсат</h2>
+            <form onSubmit={handleAddGoal} className="space-y-4">
+              <div>
+                <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 block">Мақсат атауы</label>
+                <input required type="text" value={goalName} onChange={e => setGoalName(e.target.value)} placeholder="Мысалы: Көлік алу" className="w-full bg-gray-50 border-0 p-4 rounded-2xl outline-none font-medium focus:ring-2 focus:ring-black" />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 block">Қанша жинау керек? (₸)</label>
+                <input required type="text" inputMode="numeric" value={goalTarget} onChange={e => setGoalTarget(formatMoney(e.target.value))} placeholder="0" className="w-full bg-gray-50 border-0 p-4 rounded-2xl outline-none font-bold focus:ring-2 focus:ring-black" />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 block">Қазір қанша бар? (₸)</label>
+                <input type="text" inputMode="numeric" value={goalCurrent} onChange={e => setGoalCurrent(formatMoney(e.target.value))} placeholder="0" className="w-full bg-gray-50 border-0 p-4 rounded-2xl outline-none font-bold focus:ring-2 focus:ring-black" />
+              </div>
+              <button type="submit" className="w-full bg-black text-white font-bold py-4 rounded-2xl mt-4 shadow-md hover:bg-gray-800 transition">Сақтау</button>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Mobile Floating Action Button (FAB) */}
       {!isFormOpen && (
