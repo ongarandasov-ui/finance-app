@@ -217,42 +217,57 @@ export default function Home() {
   const handleAddGoal = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
-    await addDoc(collection(db, "goals"), {
-      name: goalName,
-      targetAmount: Number(goalTarget.replace(/\D/g, "")),
-      currentAmount: Number(goalCurrent.replace(/\D/g, "") || 0),
-      userId: user.uid
-    });
-    setIsGoalFormOpen(false);
-    setGoalName("");
-    setGoalTarget("");
-    setGoalCurrent("");
+    try {
+      await addDoc(collection(db, "goals"), {
+        name: goalName,
+        targetAmount: Number(goalTarget.replace(/\D/g, "")),
+        currentAmount: Number(goalCurrent.replace(/\D/g, "") || 0),
+        userId: user.uid
+      });
+      setIsGoalFormOpen(false);
+      setGoalName("");
+      setGoalTarget("");
+      setGoalCurrent("");
+    } catch (err: any) {
+      alert("Қателік (Goals): " + err.message);
+      console.error(err);
+    }
   };
 
   const handleAddBudget = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
-    await addDoc(collection(db, "budgets"), {
-      category: budgetCategory,
-      limitAmount: Number(budgetLimit.replace(/\D/g, "")),
-      userId: user.uid
-    });
-    setIsBudgetFormOpen(false);
-    setBudgetLimit("");
+    try {
+      await addDoc(collection(db, "budgets"), {
+        category: budgetCategory,
+        limitAmount: Number(budgetLimit.replace(/\D/g, "")),
+        userId: user.uid
+      });
+      setIsBudgetFormOpen(false);
+      setBudgetLimit("");
+    } catch (err: any) {
+      alert("Қателік (Budgets): " + err.message);
+      console.error(err);
+    }
   };
 
   const handleAddSubscription = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
-    await addDoc(collection(db, "subscriptions"), {
-      name: subName,
-      amount: Number(subAmount.replace(/\D/g, "")),
-      category: subCategory,
-      userId: user.uid
-    });
-    setIsSubFormOpen(false);
-    setSubName("");
-    setSubAmount("");
+    try {
+      await addDoc(collection(db, "subscriptions"), {
+        name: subName,
+        amount: Number(subAmount.replace(/\D/g, "")),
+        category: subCategory,
+        userId: user.uid
+      });
+      setIsSubFormOpen(false);
+      setSubName("");
+      setSubAmount("");
+    } catch (err: any) {
+      alert("Қателік (Subscriptions): " + err.message);
+      console.error(err);
+    }
   };
 
   const handlePaySubscription = async (sub: Subscription) => {
