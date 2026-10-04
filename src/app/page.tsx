@@ -809,6 +809,19 @@ export default function Home() {
                 </div>
               )}
 
+              <div>
+                <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Шот</label>
+                <select 
+                  value={selectedAccount}
+                  onChange={(e) => setSelectedAccount(e.target.value)}
+                  className="w-full bg-gray-50 dark:bg-black border-0 p-4 rounded-2xl outline-none font-medium text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-black mb-5"
+                >
+                  {ACCOUNTS.map(acc => (
+                    <option key={acc} value={acc}>{acc}</option>
+                  ))}
+                </select>
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                 <div>
                   <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Сома (₸)</label>
@@ -907,9 +920,14 @@ export default function Home() {
                       <div>
                         <div className="flex items-center space-x-2">
                           <p className="font-bold text-gray-900 dark:text-white">{t.reason || t.sourceOrDestination}</p>
-                          <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 bg-gray-100 text-gray-500 rounded-full">
+                          <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 bg-gray-100 dark:bg-gray-800 text-gray-500 rounded-full">
                             {t.category}
                           </span>
+                          {t.account && (
+                            <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 bg-blue-50 dark:bg-blue-900/30 text-blue-500 rounded-full">
+                              {t.account}
+                            </span>
+                          )}
                         </div>
                         {t.reason && t.sourceOrDestination && (
                           <p className="text-sm text-gray-500 mt-0.5">{t.sourceOrDestination}</p>
