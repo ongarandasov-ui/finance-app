@@ -773,7 +773,7 @@ export default function Home() {
 
       <div className="max-w-4xl mx-auto space-y-6">
         
-        <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white dark:bg-[#1C1C1E] dark:border dark:border-gray-800 p-4 rounded-3xl shadow-sm gap-4">
+        <header className="flex justify-between items-center bg-white dark:bg-[#1C1C1E] dark:border dark:border-gray-800 p-4 rounded-3xl shadow-sm">
           <div className="flex items-center gap-3 w-full sm:w-auto">
             {user.photoURL ? (
               <img src={user.photoURL} alt="Аватар" className="w-12 h-12 rounded-full border border-gray-100" />
@@ -795,13 +795,8 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="flex items-center justify-end w-full sm:w-auto gap-2">
-            <button 
-              onClick={() => setIsFormOpen(!isFormOpen)}
-              className="bg-black hover:bg-gray-800 dark:hover:bg-gray-200 text-white p-3 rounded-full shadow-md transition-transform hover:scale-105"
-            >
-              {isFormOpen && !editingId ? <X className="w-6 h-6" /> : <Plus className="w-6 h-6" />}
-            </button>
+          <div className="flex items-center gap-2">
+            
 
             <div className="relative">
               <button 
@@ -949,14 +944,12 @@ export default function Home() {
         {isFormOpen && (
           <div className="bg-white dark:bg-[#1C1C1E] dark:border dark:border-gray-800 p-6 rounded-3xl shadow-sm animate-in fade-in slide-in-from-top-4 border border-gray-100 relative">
             
-            {editingId && (
-              <button 
+            <button 
                 onClick={handleCloseForm}
-                className="absolute top-4 right-4 p-2 bg-gray-100 hover:bg-gray-200 rounded-full text-gray-500 transition"
+                className="absolute top-4 right-4 p-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full text-gray-500 transition"
               >
                 <X className="w-4 h-4" />
               </button>
-            )}
 
             <div className="flex space-x-2 bg-gray-100 p-1 rounded-2xl mb-6 mt-2">
               <button
@@ -1476,7 +1469,7 @@ export default function Home() {
             setIsFormOpen(true);
             window.scrollTo({ top: 0, behavior: 'smooth' });
           }}
-          className="md:hidden fixed bottom-6 right-6 bg-black text-white dark:bg-white dark:text-black p-4 rounded-full shadow-2xl z-50 transition-transform active:scale-95"
+          className="fixed bottom-6 right-6 bg-black text-white dark:bg-white dark:text-black p-4 rounded-full shadow-2xl z-50 transition-transform active:scale-95 hover:scale-105"
         >
           <Plus className="w-6 h-6" />
         </button>
