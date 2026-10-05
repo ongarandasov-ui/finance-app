@@ -744,28 +744,28 @@ export default function Home() {
               </div>
             )}
             <div>
-              <h1 className="text-lg font-bold tracking-tight text-gray-900 dark:text-white leading-tight flex items-center gap-2">
-                <span>{user.displayName || "Қолданушы"}</span>
-                <span suppressHydrationWarning className="text-[10px] font-medium text-gray-400 bg-gray-100 dark:bg-[#2C2C2E] px-2 py-0.5 rounded-full tracking-wide">
+              <h1 className="text-base sm:text-lg font-bold tracking-tight text-gray-900 dark:text-white leading-tight flex items-center gap-2 flex-wrap">
+                <span className="truncate max-w-[100px] sm:max-w-none">{user.displayName || "Қолданушы"}</span>
+                <span suppressHydrationWarning className="text-[10px] font-medium text-gray-400 bg-gray-100 dark:bg-[#2C2C2E] px-2 py-0.5 rounded-full tracking-wide whitespace-nowrap">
                   {dateString}
                 </span>
               </h1>
-              <p className="text-xs text-gray-400 truncate max-w-[200px]">{user.email}</p>
+              <p className="text-xs text-gray-400 truncate max-w-[120px] sm:max-w-[200px]">{user.email}</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <label className="bg-green-500 hover:bg-green-600 text-white p-3 rounded-full cursor-pointer transition-transform shadow-md" title="Excel жүктеу (Kaspi)">
+          <div className="flex items-center gap-1 sm:gap-2">
+            <label className="bg-green-500 hover:bg-green-600 text-white p-2.5 sm:p-3 rounded-full cursor-pointer transition-transform shadow-md" title="Excel жүктеу (Kaspi)">
               <input type="file" accept=".xlsx, .xls, .pdf" className="hidden" onChange={handleFileUpload} />
-              <Download className="w-5 h-5 rotate-180" />
+              <Download className="w-4 h-4 sm:w-5 sm:h-5 rotate-180" />
             </label>
 
             <button 
               onClick={() => setIsDarkMode(!isDarkMode)}
-              className="bg-gray-100 dark:bg-[#2C2C2E] hover:bg-gray-200 dark:hover:bg-[#3C3C3E] text-gray-600 dark:text-gray-300 p-3 rounded-full transition-transform"
+              className="bg-gray-100 dark:bg-[#2C2C2E] hover:bg-gray-200 dark:hover:bg-[#3C3C3E] text-gray-600 dark:text-gray-300 p-2.5 sm:p-3 rounded-full transition-transform"
               title="Қараңғы режим"
             >
-              {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+              {isDarkMode ? <Sun className="w-4 h-4 sm:w-5 sm:h-5" /> : <Moon className="w-4 h-4 sm:w-5 sm:h-5" />}
             </button>
             <button 
               onClick={() => setIsFormOpen(!isFormOpen)}
@@ -778,7 +778,7 @@ export default function Home() {
               className="bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 p-3 rounded-full transition-transform"
               title="Шығу"
             >
-              <LogOut className="w-5 h-5" />
+              <LogOut className="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
           </div>
         </header>
