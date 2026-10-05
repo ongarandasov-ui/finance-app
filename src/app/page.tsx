@@ -16,7 +16,9 @@ import {
   Download,
   Filter,
   Moon,
-  Sun
+  Sun,
+  MoreVertical,
+  Smartphone
 } from "lucide-react";
 import { format, isToday, isYesterday, isSameMonth, isSameDay, parseISO } from "date-fns";
 import {
@@ -120,6 +122,45 @@ export default function Home() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+
+  useEffect(() => {
+    const handleBeforeInstall = (e: any) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+    window.addEventListener('beforeinstallprompt', handleBeforeInstall);
+    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
+  }, []);
+
+  
+  const handleInstallClick = () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      deferredPrompt.userChoice.then((choiceResult: any) => {
+        if (choiceResult.outcome === 'accepted') {
+          console.log('User accepted the install prompt');
+        }
+        setDeferredPrompt(null);
+      });
+    } else {
+      // Check if iOS
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
+      if (isIOS) {
+        alert("Орнату үшін: браузердің астындағы 'Бөлісу' (Share) батырмасын басып, 'На экран Домой' (Add to Home Screen) таңдаңыз.");
+      } else {
+        alert("Браузер мәзірінен 'Установить приложение' (Install App) батырмасын басыңыз.");
+      }
+    }
+  };
+
+
+  const handleExcelClick = () => {
+    document.getElementById('excel-upload')?.click();
+    setIsMenuOpen(false);
+  };
+
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [goals, setGoals] = useState<Goal[]>([]);
   
@@ -755,31 +796,55 @@ export default function Home() {
           </div>
 
           <div className="flex items-center justify-end w-full sm:w-auto gap-2">
-            <label className="bg-green-500 hover:bg-green-600 text-white p-3 rounded-full cursor-pointer transition-transform shadow-md" title="Excel жүктеу (Kaspi)">
-              <input type="file" accept=".xlsx, .xls, .pdf" className="hidden" onChange={handleFileUpload} />
-              <Download className="w-4 h-4 sm:w-5 sm:h-5 rotate-180" />
-            </label>
-
-            <button 
-              onClick={() => setIsDarkMode(!isDarkMode)}
-              className="bg-gray-100 dark:bg-[#2C2C2E] hover:bg-gray-200 dark:hover:bg-[#3C3C3E] text-gray-600 dark:text-gray-300 p-3 rounded-full transition-transform"
-              title="Қараңғы режим"
-            >
-              {isDarkMode ? <Sun className="w-4 h-4 sm:w-5 sm:h-5" /> : <Moon className="w-4 h-4 sm:w-5 sm:h-5" />}
-            </button>
             <button 
               onClick={() => setIsFormOpen(!isFormOpen)}
               className="bg-black hover:bg-gray-800 dark:hover:bg-gray-200 text-white p-3 rounded-full shadow-md transition-transform hover:scale-105"
             >
               {isFormOpen && !editingId ? <X className="w-6 h-6" /> : <Plus className="w-6 h-6" />}
             </button>
-            <button 
-              onClick={() => signOut(auth)}
-              className="bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 p-3 rounded-full transition-transform"
-              title="Шығу"
-            >
-              <LogOut className="w-4 h-4 sm:w-5 sm:h-5" />
-            </button>
+
+            <div className="relative">
+              <button 
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                className="bg-gray-100 dark:bg-[#2C2C2E] hover:bg-gray-200 dark:hover:bg-[#3C3C3E] text-gray-600 dark:text-gray-300 p-3 rounded-full transition-transform"
+              >
+                <MoreVertical className="w-6 h-6" />
+              </button>
+              
+              
+              {isMenuOpen && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setIsMenuOpen(false)}></div>
+                  <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-[#1C1C1E] border border-gray-100 dark:border-gray-800 rounded-2xl shadow-xl z-50 overflow-hidden py-2">
+
+                  <div className="flex flex-col">
+                    <input type="file" accept=".xlsx, .xls, .pdf" className="hidden" id="excel-upload" onChange={handleFileUpload} />
+                    <button onClick={handleExcelClick} className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 text-sm font-medium text-left w-full text-gray-700 dark:text-gray-200 transition-colors">
+                      <Download className="w-5 h-5 text-green-500 rotate-180" />
+                      Excel-ден жүктеу
+                    </button>
+                    
+                    <button onClick={() => { setIsDarkMode(!isDarkMode); setIsMenuOpen(false); }} className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 text-sm font-medium text-left w-full text-gray-700 dark:text-gray-200 transition-colors">
+                      {isDarkMode ? <Sun className="w-5 h-5 text-yellow-500" /> : <Moon className="w-5 h-5 text-gray-500" />}
+                      {isDarkMode ? "Күндізгі режим" : "Түнгі режим"}
+                    </button>
+
+                    <button onClick={() => { handleInstallClick(); setIsMenuOpen(false); }} className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 text-sm font-medium text-left w-full text-blue-600 dark:text-blue-400 transition-colors">
+     <Smartphone className="w-5 h-5" />
+     Телефонға орнату
+   </button>
+
+                    <div className="h-px bg-gray-100 dark:bg-gray-800 my-1"></div>
+                    
+                    <button onClick={() => { signOut(auth); setIsMenuOpen(false); }} className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 text-sm font-medium text-left w-full text-red-500 transition-colors">
+                      <LogOut className="w-5 h-5" />
+                      Жүйеден шығу
+                    </button>
+                  </div>
+                </div>
+                </>
+              )}
+            </div>
           </div>
         </header>
 
