@@ -732,8 +732,8 @@ export default function Home() {
 
       <div className="max-w-4xl mx-auto space-y-6">
         
-        <header className="flex justify-between items-center bg-white dark:bg-[#1C1C1E] dark:border dark:border-gray-800 p-4 rounded-3xl shadow-sm">
-          <div className="flex items-center gap-3 px-2">
+        <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white dark:bg-[#1C1C1E] dark:border dark:border-gray-800 p-4 rounded-3xl shadow-sm gap-4">
+          <div className="flex items-center gap-3 w-full sm:w-auto">
             {user.photoURL ? (
               <img src={user.photoURL} alt="Аватар" className="w-12 h-12 rounded-full border border-gray-100" />
             ) : (
@@ -743,26 +743,26 @@ export default function Home() {
                 </span>
               </div>
             )}
-            <div>
+            <div className="flex-1 min-w-0">
               <h1 className="text-base sm:text-lg font-bold tracking-tight text-gray-900 dark:text-white leading-tight flex items-center gap-2 flex-wrap">
-                <span className="truncate max-w-[100px] sm:max-w-none">{user.displayName || "Қолданушы"}</span>
+                <span className="break-words whitespace-normal">{user.displayName || "Қолданушы"}</span>
                 <span suppressHydrationWarning className="text-[10px] font-medium text-gray-400 bg-gray-100 dark:bg-[#2C2C2E] px-2 py-0.5 rounded-full tracking-wide whitespace-nowrap">
                   {dateString}
                 </span>
               </h1>
-              <p className="text-xs text-gray-400 truncate max-w-[120px] sm:max-w-[200px]">{user.email}</p>
+              <p className="text-xs text-gray-400 truncate">{user.email}</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-1 sm:gap-2">
-            <label className="bg-green-500 hover:bg-green-600 text-white p-2.5 sm:p-3 rounded-full cursor-pointer transition-transform shadow-md" title="Excel жүктеу (Kaspi)">
+          <div className="flex items-center justify-end w-full sm:w-auto gap-2">
+            <label className="bg-green-500 hover:bg-green-600 text-white p-3 rounded-full cursor-pointer transition-transform shadow-md" title="Excel жүктеу (Kaspi)">
               <input type="file" accept=".xlsx, .xls, .pdf" className="hidden" onChange={handleFileUpload} />
               <Download className="w-4 h-4 sm:w-5 sm:h-5 rotate-180" />
             </label>
 
             <button 
               onClick={() => setIsDarkMode(!isDarkMode)}
-              className="bg-gray-100 dark:bg-[#2C2C2E] hover:bg-gray-200 dark:hover:bg-[#3C3C3E] text-gray-600 dark:text-gray-300 p-2.5 sm:p-3 rounded-full transition-transform"
+              className="bg-gray-100 dark:bg-[#2C2C2E] hover:bg-gray-200 dark:hover:bg-[#3C3C3E] text-gray-600 dark:text-gray-300 p-3 rounded-full transition-transform"
               title="Қараңғы режим"
             >
               {isDarkMode ? <Sun className="w-4 h-4 sm:w-5 sm:h-5" /> : <Moon className="w-4 h-4 sm:w-5 sm:h-5" />}
