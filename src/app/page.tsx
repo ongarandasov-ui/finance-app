@@ -715,6 +715,11 @@ export default function Home() {
     return "Мысалы: Себебін жазыңыз";
   };
 
+
+  const kazakhMonths = ["қаңтар", "ақпан", "наурыз", "сәуір", "мамыр", "маусым", "шілде", "тамыз", "қыркүйек", "қазан", "қараша", "желтоқсан"];
+  const d = new Date();
+  const dateString = `${d.getDate()} ${kazakhMonths[d.getMonth()]}`;
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-black text-gray-900 dark:text-white p-4 md:p-8 pb-24 md:pb-8 font-sans selection:bg-blue-100">
       
@@ -739,8 +744,11 @@ export default function Home() {
               </div>
             )}
             <div>
-              <h1 className="text-lg font-bold tracking-tight text-gray-900 dark:text-white leading-tight">
-                {user.displayName || "Қолданушы"}
+              <h1 className="text-lg font-bold tracking-tight text-gray-900 dark:text-white leading-tight flex items-center gap-2">
+                <span>{user.displayName || "Қолданушы"}</span>
+                <span suppressHydrationWarning className="text-[10px] font-medium text-gray-400 bg-gray-100 dark:bg-[#2C2C2E] px-2 py-0.5 rounded-full tracking-wide">
+                  {dateString}
+                </span>
               </h1>
               <p className="text-xs text-gray-400 truncate max-w-[200px]">{user.email}</p>
             </div>
